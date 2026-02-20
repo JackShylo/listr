@@ -18,28 +18,67 @@
         </div>
 
         <div class="add-item">
-          <input 
-            v-model="newItem" 
-            placeholder="Add a new item..."
-            @keyup.enter="addItem"
-          />
-          <button @click="addItem">Add</button>
+          <div class="input-group">
+            <input 
+              v-model="newItem" 
+              placeholder="Add a new item (max 32 characters)..."
+              @keyup.enter="addItem"
+              :disabled="currentList.items.length >= 12"
+              maxlength="32"
+            />
+            <span class="char-count">{{ newItem.length }}/32</span>
+          </div>
+          <button @click="addItem" :disabled="currentList.items.length >= 12">Add</button>
         </div>
+
+        <div v-if="itemLimitMessage" class="item-limit-message">{{ itemLimitMessage }}</div>
 
         <ul class="items-list">
           <li v-for="(item, index) in currentList.items" :key="index" class="item">
             <div v-if="editingIndex === index" class="edit-item">
-              <input v-model="editedItem" placeholder="Edit item" />
+              <input v-model="editedItem" placeholder="Edit item" maxlength="32" />
+              <span class="char-count">{{ editedItem.length }}/32</span>
               <button class="btn-save" @click="saveItem(index)">Save</button>
               <button class="btn-cancel" @click="cancelEditItem">Cancel</button>
             </div>
             <div v-else class="item-display">
-              <span @click="startEditItem(index)" class="item-text">{{ item }}</span>
+              <div class="item-content">
+                <span @click="startEditItem(index)" class="item-text">{{ item.text }}</span>
+                <button 
+                  class="btn-toggle-notes" 
+                  @click="toggleNotes(index)"
+                  :class="{ active: expandedNotes === index }"
+                  title="Toggle notes"
+                >
+                  ›
+                </button>
+              </div>
               <button class="btn-remove" @click="removeItem(index)">✕</button>
+            </div>
+            <div v-if="expandedNotes === index" class="item-notes">
+              <div v-if="editingNotesIndex === index" class="edit-notes">
+                <textarea 
+                  v-model="editedNotes" 
+                  placeholder="Add notes..."
+                  rows="3"
+                />
+                <div class="notes-actions">
+                  <button class="btn-save" @click="saveNotes(index)">Save Notes</button>
+                  <button class="btn-cancel" @click="cancelEditNotes">Cancel</button>
+                </div>
+              </div>
+              <div v-else class="view-notes">
+                <p v-if="item.notes" class="notes-text">{{ item.notes }}</p>
+                <p v-else class="no-notes">No notes yet</p>
+                <button class="btn-edit-notes" @click="startEditNotes(index)">{{ item.notes ? 'Edit' : 'Add' }} Notes</button>
+              </div>
             </div>
           </li>
         </ul>
 
+        <p v-if="currentList.items.length === 12" class="item-count-display">
+          Maximum items (12) reached for this list
+        </p>
         <p v-if="currentList.items.length === 0" class="empty-state">
           No items yet. Add one to get started!
         </p>
@@ -58,10 +97,21 @@ const showEditName = ref(false);
 const editedName = ref('');
 const editingIndex = ref(null);
 const editedItem = ref('');
+const itemLimitMessage = ref('');
+const expandedNotes = ref(null);
+const editingNotesIndex = ref(null);
+const editedNotes = ref('');
 
 const currentList = computed(() => listStore.getCurrentList());
 
 const addItem = () => {
+  itemLimitMessage.value = '';
+  
+  if (currentList.value.items.length >= 12) {
+    itemLimitMessage.value = 'Maximum 12 items allowed per list';
+    return;
+  }
+  
   if (newItem.value.trim()) {
     listStore.addItem(listStore.currentListId, newItem.value);
     newItem.value = '';
@@ -74,7 +124,7 @@ const removeItem = (index) => {
 
 const startEditItem = (index) => {
   editingIndex.value = index;
-  editedItem.value = currentList.value.items[index];
+  editedItem.value = currentList.value.items[index].text;
 };
 
 const saveItem = (index) => {
@@ -88,6 +138,32 @@ const saveItem = (index) => {
 const cancelEditItem = () => {
   editingIndex.value = null;
   editedItem.value = '';
+};
+
+const toggleNotes = (index) => {
+  if (expandedNotes.value === index) {
+    expandedNotes.value = null;
+  } else {
+    expandedNotes.value = index;
+    editingNotesIndex.value = null;
+    editedNotes.value = '';
+  }
+};
+
+const startEditNotes = (index) => {
+  editingNotesIndex.value = index;
+  editedNotes.value = currentList.value.items[index].notes;
+};
+
+const saveNotes = (index) => {
+  listStore.updateItemNotes(listStore.currentListId, index, editedNotes.value);
+  editingNotesIndex.value = null;
+  editedNotes.value = '';
+};
+
+const cancelEditNotes = () => {
+  editingNotesIndex.value = null;
+  editedNotes.value = '';
 };
 
 const deleteCurrentList = () => {
@@ -222,6 +298,21 @@ const cancelEdit = () => {
   border-color: #5a5aff;
 }
 
+.input-group {
+  position: relative;
+  flex: 1;
+}
+
+.char-count {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: #888;
+  pointer-events: none;
+}
+
 .add-item button {
   padding: 0.75rem 1.5rem;
   background: #5a5aff;
@@ -237,6 +328,35 @@ const cancelEdit = () => {
   background: #7575ff;
 }
 
+.add-item input:disabled,
+.add-item button:disabled {
+  background: #555;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.add-item button:disabled:hover {
+  background: #555;
+}
+
+.item-limit-message {
+  color: #ff4444;
+  font-size: 0.9rem;
+  padding: 0.75rem;
+  background: rgba(255, 68, 68, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid #ff4444;
+  margin-bottom: 1.5rem;
+}
+
+.item-count-display {
+  text-align: center;
+  color: #4CAF50;
+  font-size: 0.9rem;
+  margin-top: 1.5rem;
+  font-weight: bold;
+}
+
 .items-list {
   list-style: none;
   padding: 0;
@@ -246,13 +366,15 @@ const cancelEdit = () => {
 .item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1rem;
   background: #2a2a2a;
   border: 1px solid #404040;
   border-radius: 4px;
   margin-bottom: 0.75rem;
   transition: all 0.3s;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .item:hover {
@@ -268,6 +390,13 @@ const cancelEdit = () => {
   gap: 1rem;
 }
 
+.item-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
 .item-text {
   flex: 1;
   color: #e0e0e0;
@@ -275,6 +404,7 @@ const cancelEdit = () => {
   padding: 0.25rem;
   border-radius: 2px;
   transition: all 0.3s;
+  word-break: break-word;
 }
 
 .item-text:hover {
@@ -282,25 +412,129 @@ const cancelEdit = () => {
   color: #fff;
 }
 
+.btn-toggle-notes {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 0 0.25rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-toggle-notes:hover {
+  color: #5a5aff;
+}
+
+.btn-toggle-notes.active {
+  color: #5a5aff;
+  transform: rotate(90deg);
+}
+
 .edit-item {
   display: flex;
   width: 100%;
   gap: 0.5rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
 }
 
 .edit-item input {
   flex: 1;
+  min-width: 200px;
   padding: 0.5rem;
   background: #1a1a1a;
   border: 1px solid #5a5aff;
   border-radius: 3px;
   color: #e0e0e0;
   font-size: 0.95rem;
+  position: relative;
 }
 
 .edit-item input:focus {
   outline: none;
   border-color: #7575ff;
+}
+
+.edit-item .char-count {
+  position: static;
+  transform: none;
+  font-size: 0.75rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.item-notes {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #404040;
+  border-radius: 3px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.edit-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edit-notes textarea {
+  padding: 0.75rem;
+  background: #2a2a2a;
+  border: 1px solid #5a5aff;
+  border-radius: 3px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.edit-notes textarea:focus {
+  outline: none;
+  border-color: #7575ff;
+}
+
+.notes-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notes-text {
+  margin: 0;
+  color: #e0e0e0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.no-notes {
+  margin: 0;
+  color: #888;
+  font-style: italic;
+}
+
+.btn-edit-notes {
+  padding: 0.5rem 1rem;
+  background: #5a5aff;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.btn-edit-notes:hover {
+  background: #7575ff;
 }
 
 .btn-save,
@@ -375,195 +609,4 @@ button:hover {
 }
 </style>
 
-<style scoped>
-.list-manager {
-  display: flex;
-  height: 100vh;
-  background: #1a1a1a;
-}
 
-.main-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
-  color: #e0e0e0;
-}
-
-.list-detail {
-  max-width: 800px;
-}
-
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid #404040;
-  padding-bottom: 1rem;
-}
-
-.list-header h1 {
-  margin: 0;
-  font-size: 2rem;
-  color: #fff;
-}
-
-.list-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.edit-name {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.edit-name input {
-  flex: 1;
-  padding: 0.75rem;
-  background: #2a2a2a;
-  border: 1px solid #404040;
-  border-radius: 4px;
-  color: #e0e0e0;
-  font-size: 1rem;
-}
-
-.edit-name input:focus {
-  outline: none;
-  border-color: #5a5aff;
-}
-
-.btn-edit,
-.btn-delete {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s;
-}
-
-.btn-edit {
-  background: #5a5aff;
-  color: white;
-}
-
-.btn-edit:hover {
-  background: #7575ff;
-}
-
-.btn-delete {
-  background: #ff4444;
-  color: white;
-}
-
-.btn-delete:hover {
-  background: #ff6666;
-}
-
-.add-item {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-.add-item input {
-  flex: 1;
-  padding: 0.75rem;
-  background: #2a2a2a;
-  border: 1px solid #404040;
-  border-radius: 4px;
-  color: #e0e0e0;
-  font-size: 1rem;
-}
-
-.add-item input:focus {
-  outline: none;
-  border-color: #5a5aff;
-}
-
-.add-item button {
-  padding: 0.75rem 1.5rem;
-  background: #5a5aff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s;
-}
-
-.add-item button:hover {
-  background: #7575ff;
-}
-
-.items-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: #2a2a2a;
-  border: 1px solid #404040;
-  border-radius: 4px;
-  margin-bottom: 0.75rem;
-  transition: all 0.3s;
-}
-
-.item:hover {
-  background: #333333;
-  border-color: #505050;
-}
-
-.item span {
-  color: #e0e0e0;
-}
-
-.btn-remove {
-  background: #ff4444;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.25rem 0.75rem;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s;
-}
-
-.btn-remove:hover {
-  background: #ff6666;
-}
-
-.empty-state {
-  text-align: center;
-  color: #888;
-  font-style: italic;
-  margin-top: 2rem;
-}
-
-button {
-  padding: 0.5rem 1rem;
-  background: #5a5aff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-button:hover {
-  background: #7575ff;
-}
-
-@media (max-width: 768px) {
-  .list-manager {
-    flex-direction: column;
-  }
-}
-</style>
