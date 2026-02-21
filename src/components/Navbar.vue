@@ -48,7 +48,13 @@
           <li 
             v-for="list in getListsByCategory(category.id)" 
             :key="list.id"
-            :class="['list-item', { active: isActive(list.id) }]"
+            :class="['list-item', { active: isActive(list.id), dragging: draggedListId === list.id, dragover: dragoverListId === list.id }]"
+            draggable="true"
+            @dragstart="startDrag(list, category.id)"
+            @dragend="endDrag"
+            @dragover="handleDragOver($event, list.id)"
+            @dragleave="dragoverListId = null"
+            @drop="handleDrop(list, category.id)"
           >
             <div class="list-item-wrapper">
               <button class="list-link" @click="selectList(list.id)">
@@ -155,6 +161,9 @@ const expandedCategories = ref([1, 2, 3, 4]);
 const selectedCategoryId = ref(1);
 const changingCategoryListId = ref(null);
 const changingCategoryId = ref(null);
+const draggedListId = ref(null);
+const draggedCategoryId = ref(null);
+const dragoverListId = ref(null);
 
 const lists = computed(() => listStore.lists);
 const categories = computed(() => listStore.categories);
@@ -269,6 +278,41 @@ const cancelCreate = () => {
 
 const goToSettings = () => {
   listStore.goToSettings();
+};
+
+const startDrag = (list, categoryId) => {
+  draggedListId.value = list.id;
+  draggedCategoryId.value = categoryId;
+};
+
+const endDrag = () => {
+  draggedListId.value = null;
+  draggedCategoryId.value = null;
+  dragoverListId.value = null;
+};
+
+const handleDragOver = (event, targetListId) => {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  dragoverListId.value = targetListId;
+};
+
+const handleDrop = (targetList, targetCategoryId) => {
+  if (draggedListId.value === null) return;
+  
+  const sourceListId = draggedListId.value;
+  const sourceCategoryId = draggedCategoryId.value;
+  
+  // Don't reorder if dropping on itself
+  if (sourceListId === targetList.id) {
+    endDrag();
+    return;
+  }
+  
+  // Reorder lists within the same category or between categories
+  listStore.reorderList(sourceListId, targetList.id, sourceCategoryId, targetCategoryId);
+  
+  endDrag();
 };
 </script>
 
@@ -485,6 +529,18 @@ const goToSettings = () => {
 
 .list-item {
     border-bottom: 1px solid #333;
+    transition: all 0.2s ease;
+}
+
+.list-item.dragging {
+    opacity: 0.5;
+    background: rgba(90, 90, 255, 0.1);
+}
+
+.list-item.dragover {
+    background: rgba(90, 90, 255, 0.2);
+    border-top: 2px solid #5a5aff;
+    padding-top: 0.25rem;
 }
 
 .list-item-wrapper {

@@ -160,5 +160,47 @@ export const listStore = reactive({
       showCompletedItems: true,
       theme: 'dark'
     };
+  },
+
+  reorderList(sourceListId, targetListId, sourceCategoryId, targetCategoryId) {
+    // Find the source list
+    const sourceList = this.lists.find(l => l.id === sourceListId);
+    if (!sourceList) return;
+
+    // If moving between categories, update the category
+    if (sourceCategoryId !== targetCategoryId) {
+      sourceList.categoryId = targetCategoryId;
+    }
+
+    // Get lists in the target category
+    const targetCategoryLists = this.lists.filter(l => l.categoryId === targetCategoryId);
+    const targetIndex = targetCategoryLists.findIndex(l => l.id === targetListId);
+
+    if (targetIndex === -1) return;
+
+    // Remove source list from its current position
+    const allLists = this.lists;
+    const sourceIndex = allLists.findIndex(l => l.id === sourceListId);
+    if (sourceIndex > -1) {
+      allLists.splice(sourceIndex, 1);
+    }
+
+    // Find where to insert in the target category
+    let insertIndex = 0;
+    let foundTarget = false;
+    for (let i = 0; i < allLists.length; i++) {
+      if (allLists[i].categoryId === targetCategoryId) {
+        if (allLists[i].id === targetListId) {
+          insertIndex = i;
+          foundTarget = true;
+          break;
+        }
+        insertIndex = i + 1;
+      }
+    }
+
+    // Insert the source list at the target position
+    allLists.splice(insertIndex, 0, sourceList);
   }
 });
+
