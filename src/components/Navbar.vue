@@ -128,8 +128,13 @@
     </transition>
 
     <div class="sidebar-footer">
-      <p v-if="lists.length >= 8" class="limit-warning">✓ Max lists reached</p>
-      <p class="list-count">{{ lists.length }}/8 lists</p>
+      <button class="btn-settings" @click="goToSettings" title="Open settings">
+        ⚙️
+      </button>
+      <div class="footer-info">
+        <p v-if="lists.length >= 8" class="limit-warning">✓ Max lists reached</p>
+        <p class="list-count">{{ lists.length }}/8 lists</p>
+      </div>
     </div>
   </nav>
 </template>
@@ -260,6 +265,10 @@ const cancelCreate = () => {
   showCreateForm.value = false;
   errorMessage.value = '';
   selectedCategoryId.value = 1;
+};
+
+const goToSettings = () => {
+  listStore.goToSettings();
 };
 </script>
 
@@ -804,9 +813,38 @@ const cancelCreate = () => {
 }
 
 .sidebar-footer {
-    padding: 1rem 1.5rem;
+    padding: 1rem;
     background: #1a1a1a;
     border-top: 1px solid #404040;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.btn-settings {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: #404040;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-settings:hover {
+    background: #5a5aff;
+    color: white;
+    transform: scale(1.1);
+}
+
+.footer-info {
+    width: 100%;
 }
 
 .list-count {

@@ -2,13 +2,10 @@
   <div class="list-manager">
     <Navbar />
     <main class="main-content">
-      <div v-if="currentList" class="list-detail">
+      <SettingsPage v-if="currentPage === 'settings'" />
+      <div v-else-if="currentList" class="list-detail">
         <div class="list-header">
           <h1>{{ currentList.name }}</h1>
-          <div class="list-actions">
-            <button class="btn-edit" @click="startEditName">Edit</button>
-            <button class="btn-delete" @click="deleteCurrentList">Delete</button>
-          </div>
         </div>
 
         <div v-if="showEditName" class="edit-name">
@@ -53,7 +50,7 @@
                   ›
                 </button>
               </div>
-              <button class="btn-remove" @click="removeItem(index)">✕</button>
+                <button class="btn-remove" @click="removeItem(index)" title="Delete item">🗑️</button>
             </div>
             <div v-if="expandedNotes === index" class="item-notes">
               <div v-if="editingNotesIndex === index" class="edit-notes">
@@ -91,6 +88,7 @@
 import { ref, computed } from 'vue';
 import { listStore } from '../stores/listStore';
 import Navbar from './Navbar.vue';
+import SettingsPage from './SettingsPage.vue';
 
 const newItem = ref('');
 const showEditName = ref(false);
@@ -103,6 +101,7 @@ const editingNotesIndex = ref(null);
 const editedNotes = ref('');
 
 const currentList = computed(() => listStore.getCurrentList());
+const currentPage = computed(() => listStore.currentPage);
 
 const addItem = () => {
   itemLimitMessage.value = '';
