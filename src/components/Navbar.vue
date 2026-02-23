@@ -1,11 +1,9 @@
 <template>
   <nav class="navbar sidebar" :class="{ collapsed: !navbarOpen }">
     <div class="sidebar-header">
-      <h1>Listr</h1>
+      <h1>🫨 ListCord 🫨</h1>
       <div class="header-actions">
-        <button class="btn-create" @click="showCreateForm = true" title="Create new list" :disabled="lists.length >= 8">
-          +
-        </button>
+        <button class="btn-settings" @click="goToSettings" title="Open settings">⚙️</button>
         <button class="btn-toggle-nav" @click="toggleNavbar" title="Toggle navigation" aria-label="Toggle navigation">
           ☰
         </button>
@@ -141,8 +139,8 @@
     <div v-if="!navbarOpen" class="navbar-backdrop" @click="toggleNavbar"></div>
 
     <div class="sidebar-footer">
-      <button class="btn-settings" @click="goToSettings" title="Open settings">
-        ⚙️
+      <button class="btn-create" @click="showCreateForm = true" title="Create new list" :disabled="lists.length >= 8">
+        +
       </button>
       <div class="footer-info">
         <p v-if="lists.length >= 8" class="limit-warning">✓ Max lists reached</p>
@@ -333,7 +331,7 @@ const handleDrop = (targetList, targetCategoryId) => {
 
 <style scoped>
 .navbar.sidebar {
-    width: 250px;
+    flex-grow: 1;
     background: #2a2a2a;
     border-right: 1px solid #404040;
     display: flex;
@@ -378,7 +376,6 @@ const handleDrop = (targetList, targetCategoryId) => {
 }
 
 .btn-toggle-nav {
-    display: none;
     width: 36px;
     height: 36px;
     padding: 0;

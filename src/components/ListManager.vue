@@ -16,22 +16,6 @@
               <button @click="cancelEdit">Cancel</button>
             </div>
 
-            <div class="add-item">
-              <div class="input-group">
-                <input 
-                  v-model="newItem" 
-                  placeholder="Add a new item (max 32 characters)..."
-                  @keyup.enter="addItem"
-                  :disabled="currentList.items.length >= 12"
-                  maxlength="32"
-                />
-                <span class="char-count">{{ newItem.length }}/32</span>
-              </div>
-              <button @click="addItem" :disabled="currentList.items.length >= 12">Add</button>
-            </div>
-
-            <div v-if="itemLimitMessage" class="item-limit-message">{{ itemLimitMessage }}</div>
-
             <ul class="items-list">
               <li v-for="(item, index) in currentList.items" :key="index" class="item">
                 <div v-if="editingIndex === index" class="edit-item">
@@ -91,18 +75,30 @@
             <p v-if="currentList.items.length === 0" class="empty-state">
               No items yet. Add one to get started!
             </p>
+
+            <div v-if="itemLimitMessage" class="item-limit-message">{{ itemLimitMessage }}</div>
           </div>
         </div>
-        <div class="pinboard-wrapper">
-          <button class="pinboard-toggle" @click="togglePinboard" :title="pinboardOpen ? 'Collapse pinboard' : 'Expand pinboard'">
-            {{ pinboardOpen ? '‹' : '›' }}
-          </button>
-          <div v-show="pinboardOpen" class="pinboard-container">
-            <Pinboard />
+     </div>
+          <div v-if="currentList" class="add-item">
+            <div class="input-group">
+              <input 
+                v-model="newItem" 
+                placeholder="Add a new item (max 32 characters)..."
+                @keyup.enter="addItem"
+                :disabled="currentList.items.length >= 12"
+                maxlength="32"
+              />
+              <span class="char-count">{{ newItem.length }}/32</span>
+            </div>
+            <button @click="addItem" :disabled="currentList.items.length >= 12">Add</button>
           </div>
-        </div>
-      </div>
     </main>
+    <div class="pinboard-wrapper">
+      <div v-show="pinboardOpen" class="pinboard-container">
+        <Pinboard />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -227,6 +223,10 @@ const isItemPinned = (index) => {
 const togglePinboard = () => {
   pinboardOpen.value = !pinboardOpen.value;
 };
+
+const goToSettings = () => {
+  listStore.goToSettings();
+};
 </script>
 
 <style scoped>
@@ -237,12 +237,13 @@ const togglePinboard = () => {
 }
 
 .main-content {
-  flex: 1;
-  overflow-y: auto;
+  flex-grow: 3;
   padding: 2rem;
+  overflow-y: auto;
   color: #e0e0e0;
   display: flex;
   min-width: 0;
+  position: relative;
 }
 
 .content-wrapper {
@@ -259,39 +260,15 @@ const togglePinboard = () => {
 }
 
 .pinboard-wrapper {
+  padding: 2rem;
+  flex-grow: 1;
   display: flex;
-  align-items: flex-start;
   gap: 0.5rem;
   height: fit-content;
 }
 
-.pinboard-toggle {
-  background: #222222;
-  border: 1px solid #404040;
-  border-radius: 8px;
-  color: #e0e0e0;
-  cursor: pointer;
-  padding: 0.5rem 0.375rem;
-  font-size: 1.5rem;
-  transition: all 0.3s;
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: sticky;
-  top: 2rem;
-}
-
-.pinboard-toggle:hover {
-  background: #2a2a2a;
-  border-color: #505050;
-  color: #5a5aff;
-}
-
 .pinboard-container {
-  width: 320px;
+  width: 100%;
   background: #222222;
   border-radius: 8px;
   overflow: hidden;
@@ -375,13 +352,22 @@ const togglePinboard = () => {
 }
 
 .add-item {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  left: 0;
   display: flex;
+  flex: 1;
   gap: 0.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
+  background: linear-gradient(to bottom, rgba(20, 20, 20, 0), rgba(20, 20, 20, 1));
+  padding: 2rem;
+  z-index: 10;
 }
 
 .add-item input {
   flex: 1;
+  width: 100%;
   padding: 0.75rem;
   background: #2a2a2a;
   border: 1px solid #404040;
@@ -792,22 +778,30 @@ button:hover {
     flex-direction: column;
   }
 
-  .add-item input,
-  .add-item button {
-    width: 100%;
-  }
+.main-content .btn-settings {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: #222222;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  color: #e0e0e0;
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 1.5rem;
+  transition: all 0.3s;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
 
-  .pinboard-wrapper {
-    width: 100%;
-  }
-
-  .pinboard-toggle {
-    width: 100%;
-  }
-
-  .pinboard-container {
-    width: 100%;
-  }
+.main-content .btn-settings:hover {
+  background: #333333;
+  border-color: #505050;
+}
 }
 
 </style>

@@ -16,7 +16,6 @@ export const listStore = reactive({
     { id: 5, name: 'Reading', categoryId: 2, createdAt: new Date('2024-01-09T16:10:00').getTime(), items: [{ text: 'JavaScript Book', notes: '', createdAt: new Date('2024-01-09T16:10:00').getTime() }, { text: 'Vue Guide', notes: '', createdAt: new Date('2024-01-09T16:30:00').getTime() }] },
     { id: 6, name: 'Hobbies', categoryId: 2, createdAt: new Date('2024-01-11T17:00:00').getTime(), items: [{ text: 'Play guitar', notes: '', createdAt: new Date('2024-01-11T17:00:00').getTime() }, { text: 'Photography', notes: '', createdAt: new Date('2024-01-11T17:20:00').getTime() }] },
     { id: 7, name: 'Home', categoryId: 3, createdAt: new Date('2024-01-14T08:30:00').getTime(), items: [{ text: 'Clean kitchen', notes: '', createdAt: new Date('2024-01-14T08:30:00').getTime() }, { text: 'Fix door', notes: '', createdAt: new Date('2024-01-14T09:00:00').getTime() }] },
-    { id: 8, name: 'Travel', categoryId: 4, createdAt: new Date('2024-01-13T13:15:00').getTime(), items: [{ text: 'Book hotel', notes: '', createdAt: new Date('2024-01-13T13:15:00').getTime() }, { text: 'Plan itinerary', notes: '', createdAt: new Date('2024-01-13T13:45:00').getTime() }] }
   ],
   settings: {
     defaultCategory: 1,
