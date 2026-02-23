@@ -26,6 +26,7 @@ export const listStore = reactive({
   currentListId: 1,
   nextId: 9,
   nextCategoryId: 5,
+  pinnedItems: [],
 
   getCurrentList() {
     return this.lists.find(list => list.id === this.currentListId);
@@ -201,6 +202,34 @@ export const listStore = reactive({
 
     // Insert the source list at the target position
     allLists.splice(insertIndex, 0, sourceList);
+  },
+
+  pinItem(listId, itemIndex) {
+    const list = this.lists.find(l => l.id === listId);
+    if (list && itemIndex >= 0 && itemIndex < list.items.length) {
+      const item = list.items[itemIndex];
+      const isPinned = this.pinnedItems.some(p => p.listId === listId && p.itemIndex === itemIndex);
+      if (!isPinned) {
+        this.pinnedItems.push({
+          listId,
+          itemIndex,
+          text: item.text,
+          notes: item.notes,
+          pinnedAt: Date.now()
+        });
+      }
+    }
+  },
+
+  unpinItem(listId, itemIndex) {
+    this.pinnedItems = this.pinnedItems.filter(p => !(p.listId === listId && p.itemIndex === itemIndex));
+  },
+
+  isItemPinned(listId, itemIndex) {
+    return this.pinnedItems.some(p => p.listId === listId && p.itemIndex === itemIndex);
+  },
+
+  getPinnedItems() {
+    return this.pinnedItems.sort((a, b) => b.pinnedAt - a.pinnedAt);
   }
 });
-

@@ -2,83 +2,100 @@
   <div class="list-manager">
     <Navbar />
     <main class="main-content">
-      <SettingsPage v-if="currentPage === 'settings'" />
-      <div v-else-if="currentList" class="list-detail">
-        <div class="list-header">
-          <h1>{{ currentList.name }}</h1>
-        </div>
-
-        <div v-if="showEditName" class="edit-name">
-          <input v-model="editedName" placeholder="List name" />
-          <button @click="saveName">Save</button>
-          <button @click="cancelEdit">Cancel</button>
-        </div>
-
-        <div class="add-item">
-          <div class="input-group">
-            <input 
-              v-model="newItem" 
-              placeholder="Add a new item (max 32 characters)..."
-              @keyup.enter="addItem"
-              :disabled="currentList.items.length >= 12"
-              maxlength="32"
-            />
-            <span class="char-count">{{ newItem.length }}/32</span>
-          </div>
-          <button @click="addItem" :disabled="currentList.items.length >= 12">Add</button>
-        </div>
-
-        <div v-if="itemLimitMessage" class="item-limit-message">{{ itemLimitMessage }}</div>
-
-        <ul class="items-list">
-          <li v-for="(item, index) in currentList.items" :key="index" class="item">
-            <div v-if="editingIndex === index" class="edit-item">
-              <input v-model="editedItem" placeholder="Edit item" maxlength="32" />
-              <span class="char-count">{{ editedItem.length }}/32</span>
-              <button class="btn-save" @click="saveItem(index)">Save</button>
-              <button class="btn-cancel" @click="cancelEditItem">Cancel</button>
+      <div class="content-wrapper">
+        <div class="list-content">
+          <SettingsPage v-if="currentPage === 'settings'" />
+          <div v-else-if="currentList" class="list-detail">
+            <div class="list-header">
+              <h1>{{ currentList.name }}</h1>
             </div>
-            <div v-else class="item-display">
-              <div class="item-content">
-                <span @click="startEditItem(index)" class="item-text">{{ item.text }}</span>
-                <button 
-                  class="btn-toggle-notes" 
-                  @click="toggleNotes(index)"
-                  :class="{ active: expandedNotes === index }"
-                  title="Toggle notes"
-                >
-                  ›
-                </button>
-              </div>
-                <button class="btn-remove" @click="removeItem(index)" title="Delete item">🗑️</button>
+
+            <div v-if="showEditName" class="edit-name">
+              <input v-model="editedName" placeholder="List name" />
+              <button @click="saveName">Save</button>
+              <button @click="cancelEdit">Cancel</button>
             </div>
-            <div v-if="expandedNotes === index" class="item-notes">
-              <div v-if="editingNotesIndex === index" class="edit-notes">
-                <textarea 
-                  v-model="editedNotes" 
-                  placeholder="Add notes..."
-                  rows="3"
+
+            <div class="add-item">
+              <div class="input-group">
+                <input 
+                  v-model="newItem" 
+                  placeholder="Add a new item (max 32 characters)..."
+                  @keyup.enter="addItem"
+                  :disabled="currentList.items.length >= 12"
+                  maxlength="32"
                 />
-                <div class="notes-actions">
-                  <button class="btn-save" @click="saveNotes(index)">Save Notes</button>
-                  <button class="btn-cancel" @click="cancelEditNotes">Cancel</button>
-                </div>
+                <span class="char-count">{{ newItem.length }}/32</span>
               </div>
-              <div v-else class="view-notes">
-                <p v-if="item.notes" class="notes-text">{{ item.notes }}</p>
-                <p v-else class="no-notes">No notes yet</p>
-                <button class="btn-edit-notes" @click="startEditNotes(index)">{{ item.notes ? 'Edit' : 'Add' }} Notes</button>
-              </div>
+              <button @click="addItem" :disabled="currentList.items.length >= 12">Add</button>
             </div>
-          </li>
-        </ul>
 
-        <p v-if="currentList.items.length === 12" class="item-count-display">
-          Maximum items (12) reached for this list
-        </p>
-        <p v-if="currentList.items.length === 0" class="empty-state">
-          No items yet. Add one to get started!
-        </p>
+            <div v-if="itemLimitMessage" class="item-limit-message">{{ itemLimitMessage }}</div>
+
+            <ul class="items-list">
+              <li v-for="(item, index) in currentList.items" :key="index" class="item">
+                <div v-if="editingIndex === index" class="edit-item">
+                  <input v-model="editedItem" placeholder="Edit item" maxlength="32" />
+                  <span class="char-count">{{ editedItem.length }}/32</span>
+                  <button class="btn-save" @click="saveItem(index)">Save</button>
+                  <button class="btn-cancel" @click="cancelEditItem">Cancel</button>
+                </div>
+                <div v-else class="item-display">
+                  <div class="item-content">
+                    <span @click="startEditItem(index)" class="item-text">{{ item.text }}</span>
+                    <button 
+                      class="btn-toggle-notes" 
+                      @click="toggleNotes(index)"
+                      :class="{ active: expandedNotes === index }"
+                      title="Toggle notes"
+                    >
+                      ›
+                    </button>
+                  </div>
+                  <div class="item-actions">
+                    <button 
+                      class="btn-pin"
+                      :class="{ pinned: isItemPinned(index) }"
+                      @click="togglePin(index)"
+                      :title="isItemPinned(index) ? 'Unpin item' : 'Pin item'"
+                    >
+                      📌
+                    </button>
+                    <button class="btn-remove" @click="removeItem(index)" title="Delete item">🗑️</button>
+                  </div>
+                </div>
+                <div v-if="expandedNotes === index" class="item-notes">
+                  <div v-if="editingNotesIndex === index" class="edit-notes">
+                    <textarea 
+                      v-model="editedNotes" 
+                      placeholder="Add notes..."
+                      rows="3"
+                    />
+                    <div class="notes-actions">
+                      <button class="btn-save" @click="saveNotes(index)">Save Notes</button>
+                      <button class="btn-cancel" @click="cancelEditNotes">Cancel</button>
+                    </div>
+                  </div>
+                  <div v-else class="view-notes">
+                    <p v-if="item.notes" class="notes-text">{{ item.notes }}</p>
+                    <p v-else class="no-notes">No notes yet</p>
+                    <button class="btn-edit-notes" @click="startEditNotes(index)">{{ item.notes ? 'Edit' : 'Add' }} Notes</button>
+                  </div>
+                </div>
+              </li>
+            </ul>
+
+            <p v-if="currentList.items.length === 12" class="item-count-display">
+              Maximum items (12) reached for this list
+            </p>
+            <p v-if="currentList.items.length === 0" class="empty-state">
+              No items yet. Add one to get started!
+            </p>
+          </div>
+        </div>
+        <div class="pinboard-container">
+          <Pinboard />
+        </div>
       </div>
     </main>
   </div>
@@ -89,6 +106,7 @@ import { ref, computed } from 'vue';
 import { listStore } from '../stores/listStore';
 import Navbar from './Navbar.vue';
 import SettingsPage from './SettingsPage.vue';
+import Pinboard from './Pinboard.vue';
 
 const newItem = ref('');
 const showEditName = ref(false);
@@ -187,6 +205,18 @@ const cancelEdit = () => {
   showEditName.value = false;
   editedName.value = '';
 };
+
+const togglePin = (index) => {
+  if (listStore.isItemPinned(listStore.currentListId, index)) {
+    listStore.unpinItem(listStore.currentListId, index);
+  } else {
+    listStore.pinItem(listStore.currentListId, index);
+  }
+};
+
+const isItemPinned = (index) => {
+  return listStore.isItemPinned(listStore.currentListId, index);
+};
 </script>
 
 <style scoped>
@@ -201,6 +231,27 @@ const cancelEdit = () => {
   overflow-y: auto;
   padding: 2rem;
   color: #e0e0e0;
+  display: flex;
+}
+
+.content-wrapper {
+  display: flex;
+  width: 100%;
+  gap: 2rem;
+}
+
+.list-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 800px;
+}
+
+.pinboard-container {
+  width: 320px;
+  background: #222222;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #404040;
 }
 
 .list-detail {
@@ -396,6 +447,12 @@ const cancelEdit = () => {
   flex: 1;
 }
 
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .item-text {
   flex: 1;
   color: #e0e0e0;
@@ -565,6 +622,27 @@ const cancelEdit = () => {
   background: #777;
 }
 
+.btn-pin {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.3s;
+  border-radius: 4px;
+}
+
+.btn-pin:hover {
+  background: rgba(90, 90, 255, 0.1);
+  color: #5a5aff;
+}
+
+.btn-pin.pinned {
+  color: #ffc107;
+  background: rgba(255, 193, 7, 0.1);
+}
+
 .btn-remove {
   background: #ff4444;
   color: white;
@@ -601,9 +679,24 @@ button:hover {
   background: #7575ff;
 }
 
+@media (max-width: 1024px) {
+  .content-wrapper {
+    flex-direction: column;
+  }
+
+  .pinboard-container {
+    width: 100%;
+    max-height: 400px;
+  }
+}
+
 @media (max-width: 768px) {
   .list-manager {
     flex-direction: column;
+  }
+
+  .main-content {
+    padding: 1rem;
   }
 }
 </style>
