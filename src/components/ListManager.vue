@@ -93,8 +93,13 @@
             </p>
           </div>
         </div>
-        <div class="pinboard-container">
-          <Pinboard />
+        <div class="pinboard-wrapper">
+          <button class="pinboard-toggle" @click="togglePinboard" :title="pinboardOpen ? 'Collapse pinboard' : 'Expand pinboard'">
+            {{ pinboardOpen ? '‹' : '›' }}
+          </button>
+          <div v-show="pinboardOpen" class="pinboard-container">
+            <Pinboard />
+          </div>
         </div>
       </div>
     </main>
@@ -117,6 +122,7 @@ const itemLimitMessage = ref('');
 const expandedNotes = ref(null);
 const editingNotesIndex = ref(null);
 const editedNotes = ref('');
+const pinboardOpen = ref(window.innerWidth > 1024);
 
 const currentList = computed(() => listStore.getCurrentList());
 const currentPage = computed(() => listStore.currentPage);
@@ -217,6 +223,10 @@ const togglePin = (index) => {
 const isItemPinned = (index) => {
   return listStore.isItemPinned(listStore.currentListId, index);
 };
+
+const togglePinboard = () => {
+  pinboardOpen.value = !pinboardOpen.value;
+};
 </script>
 
 <style scoped>
@@ -232,18 +242,52 @@ const isItemPinned = (index) => {
   padding: 2rem;
   color: #e0e0e0;
   display: flex;
+  min-width: 0;
 }
 
 .content-wrapper {
   display: flex;
   width: 100%;
   gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .list-content {
   flex: 1;
   min-width: 0;
-  max-width: 800px;
+}
+
+.pinboard-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  height: fit-content;
+}
+
+.pinboard-toggle {
+  background: #222222;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  color: #e0e0e0;
+  cursor: pointer;
+  padding: 0.5rem 0.375rem;
+  font-size: 1.5rem;
+  transition: all 0.3s;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: sticky;
+  top: 2rem;
+}
+
+.pinboard-toggle:hover {
+  background: #2a2a2a;
+  border-color: #505050;
+  color: #5a5aff;
 }
 
 .pinboard-container {
@@ -252,6 +296,9 @@ const isItemPinned = (index) => {
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #404040;
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
 }
 
 .list-detail {
@@ -682,11 +729,25 @@ button:hover {
 @media (max-width: 1024px) {
   .content-wrapper {
     flex-direction: column;
+    gap: 1rem;
+  }
+
+  .pinboard-wrapper {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .pinboard-toggle {
+    position: static;
+    width: auto;
+    padding: 0.5rem 1rem;
   }
 
   .pinboard-container {
     width: 100%;
-    max-height: 400px;
+    height: auto;
+    position: static;
+    max-height: 500px;
   }
 }
 
@@ -697,8 +758,56 @@ button:hover {
 
   .main-content {
     padding: 1rem;
+    min-width: 0;
+  }
+
+  .content-wrapper {
+    gap: 0.75rem;
+  }
+
+  .pinboard-wrapper {
+    flex-direction: column;
+  }
+
+  .pinboard-toggle {
+    width: 100%;
+    position: static;
+  }
+
+  .list-detail {
+    max-width: 100%;
   }
 }
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.75rem;
+  }
+
+  .list-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .add-item {
+    flex-direction: column;
+  }
+
+  .add-item input,
+  .add-item button {
+    width: 100%;
+  }
+
+  .pinboard-wrapper {
+    width: 100%;
+  }
+
+  .pinboard-toggle {
+    width: 100%;
+  }
+
+  .pinboard-container {
+    width: 100%;
+  }
+}
+
 </style>
-
-

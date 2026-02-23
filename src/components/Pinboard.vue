@@ -133,6 +133,7 @@ const unpinItem = (listId, itemIndex) => {
   flex-direction: column;
   gap: 0.5rem;
   transition: background 0.2s, border-color 0.2s;
+  word-break: break-word;
 }
 
 .pinned-item:hover {
@@ -152,6 +153,7 @@ const unpinItem = (listId, itemIndex) => {
   letter-spacing: 0.5px;
   color: #5a5aff;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .btn-unpin {
@@ -168,6 +170,7 @@ const unpinItem = (listId, itemIndex) => {
   justify-content: center;
   border-radius: 2px;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .btn-unpin:hover {
@@ -188,5 +191,13 @@ const unpinItem = (listId, itemIndex) => {
   margin-top: 0.25rem;
   padding-top: 0.5rem;
   border-top: 1px solid #404040;
+  word-break: break-word;
+}
+
+@media (max-width: 1024px) {
+  .pinboard {
+    border-left: none;
+    border-top: 2px solid #404040;
+  }
 }
 </style>

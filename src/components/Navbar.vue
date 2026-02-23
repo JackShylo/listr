@@ -1,10 +1,15 @@
 <template>
-  <nav class="navbar sidebar">
+  <nav class="navbar sidebar" :class="{ collapsed: !navbarOpen }">
     <div class="sidebar-header">
       <h1>Listr</h1>
-      <button class="btn-create" @click="showCreateForm = true" title="Create new list" :disabled="lists.length >= 8">
-        +
-      </button>
+      <div class="header-actions">
+        <button class="btn-create" @click="showCreateForm = true" title="Create new list" :disabled="lists.length >= 8">
+          +
+        </button>
+        <button class="btn-toggle-nav" @click="toggleNavbar" title="Toggle navigation" aria-label="Toggle navigation">
+          ☰
+        </button>
+      </div>
     </div>
 
     <div v-if="showCreateForm" class="create-form">
@@ -133,6 +138,8 @@
       </div>
     </transition>
 
+    <div v-if="!navbarOpen" class="navbar-backdrop" @click="toggleNavbar"></div>
+
     <div class="sidebar-footer">
       <button class="btn-settings" @click="goToSettings" title="Open settings">
         ⚙️
@@ -164,6 +171,7 @@ const changingCategoryId = ref(null);
 const draggedListId = ref(null);
 const draggedCategoryId = ref(null);
 const dragoverListId = ref(null);
+const navbarOpen = ref(window.innerWidth > 768);
 
 const lists = computed(() => listStore.lists);
 const categories = computed(() => listStore.categories);
@@ -186,6 +194,9 @@ const toggleCategory = (categoryId) => {
 const selectList = (id) => {
   listStore.setCurrentList(id);
   openMenuId.value = null;
+  if (window.innerWidth <= 768) {
+    navbarOpen.value = false;
+  }
 };
 
 const toggleMenu = (id) => {
@@ -280,6 +291,10 @@ const goToSettings = () => {
   listStore.goToSettings();
 };
 
+const toggleNavbar = () => {
+  navbarOpen.value = !navbarOpen.value;
+};
+
 const startDrag = (list, categoryId) => {
   draggedListId.value = list.id;
   draggedCategoryId.value = categoryId;
@@ -326,6 +341,17 @@ const handleDrop = (targetList, targetCategoryId) => {
     height: 100vh;
     color: #e0e0e0;
     padding: 0;
+    transition: transform 0.3s ease, width 0.3s ease;
+}
+
+.navbar.sidebar.collapsed {
+    transform: translateX(-100%);
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.5);
 }
 
 .sidebar-header {
@@ -335,6 +361,7 @@ const handleDrop = (targetList, targetCategoryId) => {
     padding: 1.5rem;
     background: #1a1a1a;
     border-bottom: 1px solid #404040;
+    gap: 0.5rem;
 }
 
 .sidebar-header h1 {
@@ -342,6 +369,32 @@ const handleDrop = (targetList, targetCategoryId) => {
     font-size: 1.5rem;
     color: #fff;
     flex: 1;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-toggle-nav {
+    display: none;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: #5a5aff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-toggle-nav:hover {
+    background: #7575ff;
 }
 
 .btn-create {
@@ -934,5 +987,89 @@ const handleDrop = (targetList, targetCategoryId) => {
 
 .lists-menu::-webkit-scrollbar-thumb:hover {
     background: #505050;
+}
+
+.navbar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 98;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .navbar-backdrop {
+        display: block;
+    }
+
+    .navbar.sidebar:not(.collapsed) .navbar-backdrop {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .navbar.sidebar.collapsed .navbar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .navbar.sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 250px;
+        height: 100vh;
+        z-index: 99;
+        transform: translateX(0);
+    }
+
+    .navbar.sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+
+    .btn-toggle-nav {
+        display: flex;
+        position: fixed;
+        left: 1rem;
+        top: 1rem;
+        z-index: 101;
+        width: 40px;
+        height: 40px;
+    }
+
+    .sidebar-header h1 {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar.sidebar {
+        width: 100%;
+    }
+
+    .sidebar-header {
+        padding: 1rem;
+    }
+
+    .sidebar-header h1 {
+        font-size: 1.1rem;
+    }
+
+    .btn-create,
+    .btn-toggle-nav {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .btn-toggle-nav {
+        left: 0.75rem;
+        top: 0.75rem;
+    }
 }
 </style>
