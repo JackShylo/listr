@@ -1,9 +1,13 @@
 <script setup>
+import Navbar from './components/Navbar.vue';
 import ListManager from './components/ListManager.vue';
+import Pinboard from './components/Pinboard.vue';
 </script>
 
 <template>
+  <Navbar />
   <ListManager />
+  <Pinboard />
 </template>
 
 <style>
@@ -23,5 +27,7 @@ body {
 
 #app {
   height: 100vh;
+  display: flex;
+  background: #1a1a1a;
 }
 </style>

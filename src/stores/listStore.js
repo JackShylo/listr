@@ -9,13 +9,13 @@ export const listStore = reactive({
     { id: 4, name: 'Other', color: '#95e1d3' }
   ],
   lists: [
-    { id: 1, name: 'Shopping', categoryId: 3, createdAt: new Date('2024-01-15T10:30:00').getTime(), items: [{ text: 'Milk', notes: '', createdAt: new Date('2024-01-15T10:30:00').getTime() }, { text: 'Eggs', notes: '', createdAt: new Date('2024-01-15T10:31:00').getTime() }, { text: 'Bread', notes: '', createdAt: new Date('2024-01-15T10:32:00').getTime() }] },
-    { id: 2, name: 'Work', categoryId: 1, createdAt: new Date('2024-01-10T09:00:00').getTime(), items: [{ text: 'Email clients', notes: '', createdAt: new Date('2024-01-10T09:00:00').getTime() }, { text: 'Complete report', notes: '', createdAt: new Date('2024-01-10T09:15:00').getTime() }] },
-    { id: 3, name: 'Personal', categoryId: 2, createdAt: new Date('2024-01-08T14:20:00').getTime(), items: [{ text: 'Call mom', notes: '', createdAt: new Date('2024-01-08T14:20:00').getTime() }, { text: 'Gym', notes: '', createdAt: new Date('2024-01-08T14:25:00').getTime() }] },
-    { id: 4, name: 'Projects', categoryId: 1, createdAt: new Date('2024-01-12T11:45:00').getTime(), items: [{ text: 'Finish Vue app', notes: '', createdAt: new Date('2024-01-12T11:45:00').getTime() }, { text: 'Review code', notes: '', createdAt: new Date('2024-01-12T12:00:00').getTime() }] },
-    { id: 5, name: 'Reading', categoryId: 2, createdAt: new Date('2024-01-09T16:10:00').getTime(), items: [{ text: 'JavaScript Book', notes: '', createdAt: new Date('2024-01-09T16:10:00').getTime() }, { text: 'Vue Guide', notes: '', createdAt: new Date('2024-01-09T16:30:00').getTime() }] },
-    { id: 6, name: 'Hobbies', categoryId: 2, createdAt: new Date('2024-01-11T17:00:00').getTime(), items: [{ text: 'Play guitar', notes: '', createdAt: new Date('2024-01-11T17:00:00').getTime() }, { text: 'Photography', notes: '', createdAt: new Date('2024-01-11T17:20:00').getTime() }] },
-    { id: 7, name: 'Home', categoryId: 3, createdAt: new Date('2024-01-14T08:30:00').getTime(), items: [{ text: 'Clean kitchen', notes: '', createdAt: new Date('2024-01-14T08:30:00').getTime() }, { text: 'Fix door', notes: '', createdAt: new Date('2024-01-14T09:00:00').getTime() }] },
+    { id: 1, name: 'Shopping', categoryId: 3, createdAt: new Date('2024-01-15T10:30:00').getTime(), items: [{ text: 'Milk', notes: '', completed: false, createdAt: new Date('2024-01-15T10:30:00').getTime() }, { text: 'Eggs', notes: '', completed: false, createdAt: new Date('2024-01-15T10:31:00').getTime() }, { text: 'Bread', notes: '', completed: false, createdAt: new Date('2024-01-15T10:32:00').getTime() }] },
+    { id: 2, name: 'Work', categoryId: 1, createdAt: new Date('2024-01-10T09:00:00').getTime(), items: [{ text: 'Email clients', notes: '', completed: false, createdAt: new Date('2024-01-10T09:00:00').getTime() }, { text: 'Complete report', notes: '', completed: false, createdAt: new Date('2024-01-10T09:15:00').getTime() }] },
+    { id: 3, name: 'Personal', categoryId: 2, createdAt: new Date('2024-01-08T14:20:00').getTime(), items: [{ text: 'Call mom', notes: '', completed: false, createdAt: new Date('2024-01-08T14:20:00').getTime() }, { text: 'Gym', notes: '', completed: false, createdAt: new Date('2024-01-08T14:25:00').getTime() }] },
+    { id: 4, name: 'Projects', categoryId: 1, createdAt: new Date('2024-01-12T11:45:00').getTime(), items: [{ text: 'Finish Vue app', notes: '', completed: false, createdAt: new Date('2024-01-12T11:45:00').getTime() }, { text: 'Review code', notes: '', completed: false, createdAt: new Date('2024-01-12T12:00:00').getTime() }] },
+    { id: 5, name: 'Reading', categoryId: 2, createdAt: new Date('2024-01-09T16:10:00').getTime(), items: [{ text: 'JavaScript Book', notes: '', completed: false, createdAt: new Date('2024-01-09T16:10:00').getTime() }, { text: 'Vue Guide', notes: '', completed: false, createdAt: new Date('2024-01-09T16:30:00').getTime() }] },
+    { id: 6, name: 'Hobbies', categoryId: 2, createdAt: new Date('2024-01-11T17:00:00').getTime(), items: [{ text: 'Play guitar', notes: '', completed: false, createdAt: new Date('2024-01-11T17:00:00').getTime() }, { text: 'Photography', notes: '', completed: false, createdAt: new Date('2024-01-11T17:20:00').getTime() }] },
+    { id: 7, name: 'Home', categoryId: 3, createdAt: new Date('2024-01-14T08:30:00').getTime(), items: [{ text: 'Clean kitchen', notes: '', completed: false, createdAt: new Date('2024-01-14T08:30:00').getTime() }, { text: 'Fix door', notes: '', completed: false, createdAt: new Date('2024-01-14T09:00:00').getTime() }] },
   ],
   settings: {
     defaultCategory: 1,
@@ -75,7 +75,7 @@ export const listStore = reactive({
   addItem(listId, item) {
     const list = this.lists.find(list => list.id === listId);
     if (list) {
-      list.items.push({ text: item, notes: '', createdAt: Date.now() });
+      list.items.push({ text: item, notes: '', completed: false, createdAt: Date.now() });
     }
   },
 
@@ -97,6 +97,13 @@ export const listStore = reactive({
     const list = this.lists.find(list => list.id === listId);
     if (list && index >= 0 && index < list.items.length) {
       list.items[index].notes = notes;
+    }
+  },
+
+  toggleItemCompleted(listId, index) {
+    const list = this.lists.find(list => list.id === listId);
+    if (list && index >= 0 && index < list.items.length) {
+      list.items[index].completed = !list.items[index].completed;
     }
   },
 

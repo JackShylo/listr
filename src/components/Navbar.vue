@@ -4,12 +4,13 @@
       <h1>🫨 ListCord 🫨</h1>
       <div class="header-actions">
         <button class="btn-settings" @click="goToSettings" title="Open settings">⚙️</button>
-        <button class="btn-toggle-nav" @click="toggleNavbar" title="Toggle navigation" aria-label="Toggle navigation">
+        <button class="btn-toggle-nav" @click="" title="Toggle navigation" aria-label="Toggle navigation">
           ☰
         </button>
       </div>
     </div>
 
+    <!-- I want to CHANGE this to a MODAL -->
     <div v-if="showCreateForm" class="create-form">
       <input 
         v-model="newListName" 
@@ -30,6 +31,7 @@
       <button @click="cancelCreate">Cancel</button>
     </div>
 
+    <!-- List and Categories -->
     <ul class="lists-menu">
       <li 
         v-for="category in categories" 
@@ -135,8 +137,6 @@
         </div>
       </div>
     </transition>
-
-    <div v-if="!navbarOpen" class="navbar-backdrop" @click="toggleNavbar"></div>
 
     <div class="sidebar-footer">
       <button class="btn-create" @click="showCreateForm = true" title="Create new list" :disabled="lists.length >= 8">
@@ -331,7 +331,7 @@ const handleDrop = (targetList, targetCategoryId) => {
 
 <style scoped>
 .navbar.sidebar {
-    flex-grow: 1;
+    flex: 1;
     background: #2a2a2a;
     border-right: 1px solid #404040;
     display: flex;
