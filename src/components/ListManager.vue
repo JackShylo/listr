@@ -20,9 +20,6 @@
                 @touchstart="onTouchStart(index, $event)"
                 @touchmove="onTouchMove(index, $event)"
                 @touchend="onTouchEnd(index, $event)"
-                @mousedown="startLongPress(index)"
-                @mouseup="cancelLongPress"
-                @mouseleave="cancelLongPress"
                 :style="{ transform: `translateX(${itemSwipe[index] || 0}px)` }"
                 :class="{ swiped: itemSwipe[index] !== undefined && itemSwipe[index] < -50 }"
               >
@@ -86,12 +83,12 @@
             <div class="input-group">
               <input 
                 v-model="newItem" 
-                placeholder="Add a new item (max 32 characters)..."
+                placeholder="Add a new item..."
                 @keyup.enter="addItem"
                 :disabled="currentList.items.length >= 12"
-                maxlength="32"
+                maxlength="64"
               />
-              <span class="char-count">{{ newItem.length }}/32</span>
+              <span class="char-count">{{ newItem.length }}/64</span>
             </div>
             <button @click="addItem" :disabled="currentList.items.length >= 12">Add</button>
           </div>
@@ -178,7 +175,6 @@ const currentPage = computed(() => listStore.currentPage);
 // Long-press handlers
 const startLongPress = (index) => {
   longPressTimer.value = setTimeout(() => {
-    startEditItem(index);
   }, longPressDuration);
 };
 
@@ -194,7 +190,6 @@ const onTouchStart = (index, event) => {
   touchStartX.value = event.touches[0].clientX;
   cancelLongPress();
   longPressTimer.value = setTimeout(() => {
-    startEditItem(index);
   }, longPressDuration);
 };
 

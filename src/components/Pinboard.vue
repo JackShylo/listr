@@ -32,6 +32,7 @@
         </div>
       </div>
     </div>
+    <button class="btn-settings" @click="goToSettings" title="Open settings">⚙️</button>
   </div>
 </template>
 
@@ -48,6 +49,10 @@ const getListName = (listId) => {
 
 const unpinItem = (listId, itemIndex) => {
   listStore.unpinItem(listId, itemIndex);
+};
+
+const goToSettings = () => {
+  listStore.goToSettings();
 };
 </script>
 
@@ -192,6 +197,30 @@ const unpinItem = (listId, itemIndex) => {
   padding-top: 0.5rem;
   border-top: 1px solid #404040;
   word-break: break-word;
+}
+
+.btn-settings {
+    position: absolute;
+    bottom: 2rem;
+    right: 2rem;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    background: #404040;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-settings:hover {
+    background: #5a5aff;
+    color: white;
+    transform: scale(1.1);
 }
 
 @media (max-width: 1024px) {
