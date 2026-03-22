@@ -1,18 +1,18 @@
 <template>
-    <main class="main-content">
-      <div class="content-wrapper">
-        <div class="list-content">
-          <SettingsPage v-if="currentPage === 'settings'" />
-          <div v-else-if="currentList">
-            <div class="list-header">
-              <h1>{{ currentList.name }}</h1>
-            </div>
+  <main class="main-content">
+    <div class="content-wrapper">
+      <div class="list-content">
+        <SettingsPage v-if="currentPage === 'settings'" />
+        <div v-else-if="currentList">
+          <div class="list-header">
+            <h1>{{ currentList.name }}</h1>
+          </div>
 
-            <div v-if="showEditName" class="edit-name">
-              <input v-model="editedName" placeholder="List name" />
-              <button @click="saveName">Save</button>
-              <button @click="cancelEdit">Cancel</button>
-            </div>
+          <div v-if="showEditName" class="edit-name">
+            <input v-model="editedName" placeholder="List name" />
+            <button @click="saveName">Save</button>
+            <button @click="cancelEdit">Cancel</button>
+          </div>
 
             <ul class="items-list">
               <li v-for="(item, index) in currentList.items" :key="index" 

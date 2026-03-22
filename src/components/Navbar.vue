@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar sidebar" :class="{ collapsed: !navbarOpen }">
     <div class="sidebar-header">
-      <h1>🫨 ListCord 🫨</h1>
+      <h1>🫨 Listr 🫨</h1>
     </div>
 
     <ul class="lists-menu">
@@ -54,7 +54,7 @@
                   @click.stop="toggleMenu(list.id)"
                   title="List options"
                 >
-                  ⋯
+                ⋮
                 </button>
                 
                 <div v-if="openMenuId === list.id" class="kebab-dropdown" @click.stop>
@@ -74,36 +74,7 @@
               </div>
             </div>
 
-            <transition name="fade">
-              <Modal
-                v-model="showModal"
-                :action="'Edit'"
-                :title="'Edit List'"
-                @confirm="handleUpdate"
-                @cancel="handleCancel"/>
-            </transition>
 
-            <transition name="fade">
-              <div v-if="changingCategoryListId === list.id">
-                <Modal
-                  v-model="changingCategoryListId"
-                  :action="'Change Category'"
-                  :title="'Change List Category'"
-                  @onConfirm="saveChangeCategory"
-                  @onCancel="cancelChangeCategory"
-                >
-                  <select v-model.number="changingCategoryId">
-                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                      {{ cat.name }}
-                    </option>
-                  </select>
-                  <div class="modal-actions">
-                    <button class="btn-save" @click="saveChangeCategory">Save</button>
-                    <button class="btn-cancel" @click="cancelChangeCategory">Cancel</button>
-                  </div>
-                </Modal>
-              </div>
-            </transition>
           </li>
         </ul>
       </li>
@@ -129,14 +100,23 @@
   </transition>
 
   <transition name="fade">
+    <Modal
+      v-model="showModal"
+      :action="'Edit'"
+      :title="'Edit List'"
+      @confirm="handleUpdate"
+      @cancel="handleCancel"
+      />
+    </transition>
+
+  <transition name="fade">
     <Modal 
       v-model="showDeleteConfirm" 
       :action="'Delete'"
       :title="'Delete List?'"
       :message="`Are you sure you want to delete ${listToDelete?.name}? This cannot be undone.`"
       @delete="confirmDelete"
-      >
-    </Modal>
+      />
   </transition>
 </template>
 
@@ -161,26 +141,7 @@ const draggedListId = ref(null);
 const draggedCategoryId = ref(null);
 const dragoverListId = ref(null);
 const navbarOpen = ref(window.innerWidth > 768);
-
 const showModal = ref(false)
-
-const modalConfig = ref({
-  action: null,
-  title: "",
-  message: "",
-  confirmText: "",
-  type: "default"
-})
-
-const openRename = () => {
-  modalConfig.value = {
-      action: null,
-      title: "Rename Item",
-      message: "",
-      confirmText: "",
-      type: ""
-  }
-}
 
 const handleUpdate = (updatedItem) => {
   const list = lists.value.findIndex(l => l.id === renamingListId.value)
@@ -234,26 +195,6 @@ const startEdit = (list) => {
   renamingListName.value = list.name;
   openMenuId.value = null;
   showModal.value = true;
-};
-
-const startChangeCategory = (list) => {
-  changingCategoryListId.value = list.id;
-  changingCategoryId.value = list.categoryId;
-  openMenuId.value = null;
-};
-
-const saveChangeCategory = () => {
-  if (changingCategoryId.value !== null) {
-    const list = lists.value.find(l => l.id === changingCategoryListId.value);
-    listStore.updateList(changingCategoryListId.value, list.name, changingCategoryId.value);
-  }
-  changingCategoryListId.value = null;
-  changingCategoryId.value = null;
-};
-
-const cancelChangeCategory = () => {
-  changingCategoryListId.value = null;
-  changingCategoryId.value = null;
 };
 
 const startDelete = (list) => {
