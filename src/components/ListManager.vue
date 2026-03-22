@@ -20,7 +20,6 @@
                 @touchstart="onTouchStart(index, $event)"
                 @touchmove="onTouchMove(index, $event)"
                 @touchend="onTouchEnd(index, $event)"
-                :style="{ transform: `translateX(${itemSwipe[index] || 0}px)` }"
                 :class="{ swiped: itemSwipe[index] !== undefined && itemSwipe[index] < -50 }"
               >
                 <div v-if="editingIndex === index" class="edit-item">
@@ -533,6 +532,7 @@ const saveDeleteModal = () => {
 }
 
 .items-list {
+  position: relative;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -732,7 +732,7 @@ const saveDeleteModal = () => {
   border: 1px solid #404040;
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 100;
+  z-index: 50;
   min-width: 150px;
   margin-top: 0.25rem;
   overflow: hidden;
