@@ -60,15 +60,9 @@
                 <div v-if="openMenuId === list.id" class="kebab-dropdown" @click.stop>
                   <button 
                     class="menu-option rename-option"
-                    @click="startRename(list)"
+                    @click="startEdit(list)"
                   >
-                    ✎ Rename
-                  </button>
-                  <button 
-                    class="menu-option"
-                    @click="startChangeCategory(list)"
-                  >
-                    🏷 Category
+                    ✎ Edit
                   </button>
                   <button 
                     class="menu-option delete-option"
@@ -80,35 +74,36 @@
               </div>
             </div>
 
-            <div v-if="renamingListId === list.id" class="modal-overlay">
-              <div class="modal-content" @click.stop>
-              <input 
-                v-model="renamingListName" 
-                placeholder="List name..."
-                @keyup.enter="saveRename"
-                @keyup.escape="cancelRename"
-                autofocus
-              />
-              <div class="modal-actions">
-                <button class="btn-save" @click="saveRename">Save</button>
-                <button class="btn-cancel" @click="cancelRename">Cancel</button>
-              </div>
-              </div>
-            </div>
+            <transition name="fade">
+              <Modal
+                v-model="showModal"
+                :action="'Edit'"
+                :title="'Edit List'"
+                @confirm="handleUpdate"
+                @cancel="handleCancel"/>
+            </transition>
 
-            <div v-if="changingCategoryListId === list.id" class="modal-overlay">
-              <div class="modal-content" @click.stop>
-              <select v-model.number="changingCategoryId">
-                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                  {{ cat.name }}
-                </option>
-              </select>
-              <div class="modal-actions">
-                <button class="btn-save" @click="saveChangeCategory">Save</button>
-                <button class="btn-cancel" @click="cancelChangeCategory">Cancel</button>
+            <transition name="fade">
+              <div v-if="changingCategoryListId === list.id">
+                <Modal
+                  v-model="changingCategoryListId"
+                  :action="'Change Category'"
+                  :title="'Change List Category'"
+                  @onConfirm="saveChangeCategory"
+                  @onCancel="cancelChangeCategory"
+                >
+                  <select v-model.number="changingCategoryId">
+                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                      {{ cat.name }}
+                    </option>
+                  </select>
+                  <div class="modal-actions">
+                    <button class="btn-save" @click="saveChangeCategory">Save</button>
+                    <button class="btn-cancel" @click="cancelChangeCategory">Cancel</button>
+                  </div>
+                </Modal>
               </div>
-              </div>
-            </div>
+            </transition>
           </li>
         </ul>
       </li>
@@ -123,49 +118,32 @@
   </nav>
 
   <transition name="fade">
-    <div v-if="showCreateModal" class="modal-overlay" @click="closeDeleteModal">
-      <div class="modal-content" @click.stop>
-        <h2>Create New List</h2>
-          <input 
-            v-model="newListName" 
-            placeholder="List name..."
-            @keyup.enter="createList"
-            autofocus
-          />
-        <div class="category-select">
-          <label>Category:</label>
-          <select v-model.number="selectedCategoryId">
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-              {{ cat.name }}
-            </option>
-          </select>
-        </div>
-        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-        <div class="modal-actions">
-          <button @click="createList">Create</button>
-          <button @click="cancelCreate">Cancel</button>
-        </div>
-      </div>
-    </div>
+    <Modal
+      v-model="showCreateModal"
+      :action="'Create'"
+      :title="'Create New List'"
+      :selectedCategoryId="selectedCategoryId"
+      @confirm="createList"
+      @cancel="cancelCreate"
+    />
   </transition>
 
-    <transition name="fade">
-      <div v-if="showDeleteConfirm" class="delete-confirmation-overlay" @click="cancelDelete">
-        <div class="delete-confirmation" @click.stop>
-          <h3>Delete List?</h3>
-          <p>Are you sure you want to delete "{{ listToDelete?.name }}"? This cannot be undone.</p>
-          <div class="modal-actions">
-            <button class="btn-delete" @click="confirmDelete">Delete</button>
-            <button class="btn-cancel" @click="cancelDelete">Cancel</button>
-          </div>
-        </div>
-      </div>
-    </transition>
+  <transition name="fade">
+    <Modal 
+      v-model="showDeleteConfirm" 
+      :action="'Delete'"
+      :title="'Delete List?'"
+      :message="`Are you sure you want to delete ${listToDelete?.name}? This cannot be undone.`"
+      @delete="confirmDelete"
+      >
+    </Modal>
+  </transition>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { listStore } from '../stores/listStore';
+import Modal from './Modal.vue';
 
 const showCreateModal= ref(false);
 const newListName = ref('');
@@ -183,6 +161,43 @@ const draggedListId = ref(null);
 const draggedCategoryId = ref(null);
 const dragoverListId = ref(null);
 const navbarOpen = ref(window.innerWidth > 768);
+
+const showModal = ref(false)
+
+const modalConfig = ref({
+  action: null,
+  title: "",
+  message: "",
+  confirmText: "",
+  type: "default"
+})
+
+const openRename = () => {
+  modalConfig.value = {
+      action: null,
+      title: "Rename Item",
+      message: "",
+      confirmText: "",
+      type: ""
+  }
+}
+
+const handleUpdate = (updatedItem) => {
+  const list = lists.value.findIndex(l => l.id === renamingListId.value)
+  if (list !== -1) {
+    listStore.updateList(renamingListId.value, updatedItem.title, updatedItem.categoryId);
+  }
+  renamingListId.value = null;
+  renamingListName.value = '';
+}
+
+const handleCancel = () => {
+  showModal.value = false;
+  renamingListId.value = null;
+  renamingListName.value = '';
+  showDeleteConfirm.value = false;
+  listToDelete.value = null;
+};
 
 const lists = computed(() => listStore.lists);
 const categories = computed(() => listStore.categories);
@@ -214,24 +229,11 @@ const toggleMenu = (id) => {
   openMenuId.value = openMenuId.value === id ? null : id;
 };
 
-const startRename = (list) => {
+const startEdit = (list) => {
   renamingListId.value = list.id;
   renamingListName.value = list.name;
   openMenuId.value = null;
-};
-
-const saveRename = () => {
-  if (renamingListName.value.trim()) {
-    const list = lists.value.find(l => l.id === renamingListId.value);
-    listStore.updateList(renamingListId.value, renamingListName.value, list.categoryId);
-  }
-  renamingListId.value = null;
-  renamingListName.value = '';
-};
-
-const cancelRename = () => {
-  renamingListId.value = null;
-  renamingListName.value = '';
+  showModal.value = true;
 };
 
 const startChangeCategory = (list) => {
@@ -266,11 +268,6 @@ const confirmDelete = () => {
     showDeleteConfirm.value = false;
     listToDelete.value = null;
   }
-};
-
-const cancelDelete = () => {
-  showDeleteConfirm.value = false;
-  listToDelete.value = null;
 };
 
 const createList = () => {
@@ -1031,6 +1028,7 @@ button {
 .modal-actions .btn-save,
 .modal-actions .btn-cancel,
 .modal-actions .btn-delete {
+    margin: 0.5rem;
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
@@ -1059,6 +1057,7 @@ button {
 }
 
 .modal-actions .btn-cancel {
+    margin: 0.5rem;
   background: #666;
   color: white;
 }

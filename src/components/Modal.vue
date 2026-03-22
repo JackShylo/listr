@@ -1,21 +1,90 @@
 <template>
-  <div class="modal-overlay">
-    <div class="modal-content" @click.stop>
+  <div v-if="modelValue" class="modal-overlay">
+    <div class="modal-content">
+      <h3>{{ props.title }}</h3> 
+      <!-- Deletion Confirmation -->
+      <p v-if="props.action === 'Delete'">{{ props.message }}</p>
+      <!-- Rename Input -->
       <input 
+        v-model="localItem.title"
+        v-if="props.action === 'Edit'"
         placeholder="List name..."
-        @keyup.enter=""
-        @keyup.escape=""
         autofocus
       />
+      <div v-if="props.action === 'Create' || props.action === 'Edit'" class="category-select">
+        <label>Category:</label>
+        <select v-model.number="props.selectedCategoryId">
+          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+            {{ cat.name }}
+          </option>
+        </select>
+      </div>
       <div class="modal-actions">
-        <button class="btn-save" @click="">Save</button>
-        <button class="btn-cancel" @click="">Cancel</button>
+        <button v-if="props.action === 'Create'" @click="onCreate" class="btn-save">Create</button>
+        <button v-if="props.action === 'Edit'" @click="onSave" class="btn-save">Save</button>
+        <button v-if="props.action === 'Delete'" @click="onDelete" class="btn-delete">Delete</button>
+        <button @click="onCancel" class="btn-cancel">Cancel</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref, watch, computed } from 'vue';
+import { listStore } from '../stores/listStore';
+
+const props = defineProps({
+  modelValue: Boolean,
+  action: '',
+  title: {
+    type: String,
+    default: 'Default Title',
+  },
+  message: {
+    type: String,
+    default: '',
+  },
+  selectedCategoryId: Number,
+  categories: {
+    type: Array,
+    default: () => [],
+  },
+});
+
+const localItem = ref({})
+const categories = computed(() => listStore.categories)
+
+
+// sync when modal opens or item changes
+watch(
+  () => props.item,
+  (newItem) => {
+    localItem.value = newItem ? { ...newItem } : {}
+  },
+  { immediate: true }
+)
+const emit = defineEmits(["update:modelValue", "confirm", "cancel", "delete"])
+
+const onCreate = () => {
+  emit('confirm', newListName.value);
+  emit('update:modelValue', false);
+  return newListName.value = '';
+};
+
+const onSave = () => {
+  emit('confirm', localItem.value);
+  emit('update:modelValue', false);
+};
+
+const onDelete = () => {
+  emit('delete', null);
+  emit('update:modelValue', false);
+}
+
+const onCancel = () => {
+  emit('cancel');
+  emit('update:modelValue', false);
+};
 </script>
 
 <style scoped>
@@ -42,7 +111,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.modal-content h2 {
+.modal-content h3 {
   margin: 0 0 1rem 0;
   color: #fff;
   font-size: 1.5rem;
@@ -115,4 +184,23 @@
 .modal-actions .btn-cancel:hover {
   background: #777;
 }
+
+.category-select {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+.category-select label {
+  margin-bottom: 0.5rem;
+  color: #e0e0e0;
+}
+.category-select select {
+  padding: 0.5rem;
+  background: #1a1a1a;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 0.95rem;
+}
+
 </style>
