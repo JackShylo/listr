@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar sidebar" :class="{ collapsed: !navbarOpen }">
+  <nav class="navbar sidebar">
     <div class="sidebar-header">
       <h1>🫨 Listr 🫨</h1>
     </div>
@@ -73,8 +73,6 @@
                 </div>
               </div>
             </div>
-
-
           </li>
         </ul>
       </li>
@@ -94,29 +92,33 @@
       :action="'Create'"
       :title="'Create New List'"
       :selectedCategoryId="selectedCategoryId"
-      @confirm="createList"
+      @confirm="handleCreate"
       @cancel="cancelCreate"
     />
   </transition>
 
   <transition name="fade">
     <Modal
-      v-model="showModal"
+      v-model="showEditModal"
       :action="'Edit'"
       :title="'Edit List'"
+      :item="listToEdit"
+      :selectedCategoryId="listToEdit?.categoryId"
       @confirm="handleUpdate"
       @cancel="handleCancel"
-      />
-    </transition>
+    />
+  </transition>
 
   <transition name="fade">
     <Modal 
-      v-model="showDeleteConfirm" 
+      v-model="showDeleteModal" 
       :action="'Delete'"
       :title="'Delete List?'"
       :message="`Are you sure you want to delete ${listToDelete?.name}? This cannot be undone.`"
+      :item="listToDelete"
       @delete="confirmDelete"
-      />
+      @cancel="handleCancel"
+    />
   </transition>
 </template>
 
@@ -125,48 +127,91 @@ import { ref, computed } from 'vue';
 import { listStore } from '../stores/listStore';
 import Modal from './Modal.vue';
 
-const showCreateModal= ref(false);
-const newListName = ref('');
-const errorMessage = ref('');
+// State for tracking which list's menu is open
 const openMenuId = ref(null);
-const renamingListId = ref(null);
-const renamingListName = ref('');
-const showDeleteConfirm = ref(false);
-const listToDelete = ref(null);
+// UI State
 const expandedCategories = ref([1, 2, 3, 4]);
+
+// Create List Modal State
+const showCreateModal = ref(false);
 const selectedCategoryId = ref(1);
-const changingCategoryListId = ref(null);
-const changingCategoryId = ref(null);
+
+// Edit List Modal State
+const showEditModal = ref(false);
+const listToEdit = ref(null);
+
+// Delete Confirmation State
+const showDeleteModal = ref(false);
+const listToDelete = ref(null);
+
+// Drag-and-Drop State
 const draggedListId = ref(null);
 const draggedCategoryId = ref(null);
 const dragoverListId = ref(null);
-const navbarOpen = ref(window.innerWidth > 768);
-const showModal = ref(false)
 
-const handleUpdate = (updatedItem) => {
-  const list = lists.value.findIndex(l => l.id === renamingListId.value)
-  if (list !== -1) {
-    listStore.updateList(renamingListId.value, updatedItem.title, updatedItem.categoryId);
+// 
+const lists = computed(() => listStore.lists);
+const categories = computed(() => listStore.categories);
+const isActive = (id) => listStore.currentListId === id;
+const getListsByCategory = (categoryId) => {
+  return listStore.getListsByCategory(categoryId);
+};
+
+const createList = (title, categoryId) => {
+  if (!title?.trim()) {
+    return;
   }
-  renamingListId.value = null;
-  renamingListName.value = '';
-}
+  
+  if (listStore.lists.length >= 8) {
+    return;
+  }
+  
+  listStore.createList(title, categoryId);
+};
+
+const handleCreate = (formData) => {
+  createList(formData.title, formData.categoryId);
+  showCreateModal.value = false;
+};
+
+const cancelCreate = () => {
+  showCreateModal.value = false;
+  selectedCategoryId.value = 1;
+};
+
+const startEdit = (list) => {
+  listToEdit.value = list;
+  showEditModal.value = true;
+  openMenuId.value = null;
+};
+
+const handleUpdate = (formData) => {
+  if (listToEdit.value) {
+    listStore.updateList(listToEdit.value.id, formData.title, formData.categoryId);
+    listToEdit.value = null;
+    showEditModal.value = false;
+  }
+};
 
 const handleCancel = () => {
-  showModal.value = false;
-  renamingListId.value = null;
-  renamingListName.value = '';
-  showDeleteConfirm.value = false;
+  showEditModal.value = false;
+  listToEdit.value = null;
+  showDeleteModal.value = false;
   listToDelete.value = null;
 };
 
-const lists = computed(() => listStore.lists);
-const categories = computed(() => listStore.categories);
+const startDelete = (list) => {
+  listToDelete.value = list;
+  showDeleteModal.value = true;
+  openMenuId.value = null;
+};
 
-const isActive = (id) => listStore.currentListId === id;
-
-const getListsByCategory = (categoryId) => {
-  return listStore.getListsByCategory(categoryId);
+const confirmDelete = () => {
+  if (listToDelete.value) {
+    listStore.deleteList(listToDelete.value.id);
+    showDeleteModal.value = false;
+    listToDelete.value = null;
+  }
 };
 
 const toggleCategory = (categoryId) => {
@@ -188,52 +233,6 @@ const selectList = (id) => {
 
 const toggleMenu = (id) => {
   openMenuId.value = openMenuId.value === id ? null : id;
-};
-
-const startEdit = (list) => {
-  renamingListId.value = list.id;
-  renamingListName.value = list.name;
-  openMenuId.value = null;
-  showModal.value = true;
-};
-
-const startDelete = (list) => {
-  listToDelete.value = list;
-  showDeleteConfirm.value = true;
-  openMenuId.value = null;
-};
-
-const confirmDelete = () => {
-  if (listToDelete.value) {
-    listStore.deleteList(listToDelete.value.id);
-    showDeleteConfirm.value = false;
-    listToDelete.value = null;
-  }
-};
-
-const createList = () => {
-  errorMessage.value = '';
-  
-  if (!newListName.value.trim()) {
-    errorMessage.value = 'List name cannot be empty';
-    return;
-  }
-  
-  if (listStore.lists.length >= 8) {
-    errorMessage.value = 'Maximum 8 lists allowed';
-    return;
-  }
-  
-  listStore.createList(newListName.value, selectedCategoryId.value);
-  newListName.value = '';
-  showCreateModal.value = false;
-};
-
-const cancelCreate = () => {
-  newListName.value = '';
-  showCreateModal.value = false;
-  errorMessage.value = '';
-  selectedCategoryId.value = 1;
 };
 
 const startDrag = (list, categoryId) => {

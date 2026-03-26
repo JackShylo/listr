@@ -1,12 +1,18 @@
 <script setup>
+import { computed } from 'vue';
 import Navbar from './components/Navbar.vue';
 import ListManager from './components/ListManager.vue';
 import Pinboard from './components/Pinboard.vue';
+import SettingsPage from './components/SettingsPage.vue';
+import { listStore } from './stores/listStore';
+
+const currentPage = computed(() => listStore.currentPage);
 </script>
 
 <template>
   <Navbar />
-  <ListManager />
+  <ListManager v-if="currentPage === 'lists'" />
+  <SettingsPage v-else-if="currentPage === 'settings'" />
   <Pinboard />
 </template>
 

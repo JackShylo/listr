@@ -2,27 +2,54 @@
   <div v-if="modelValue" class="modal-overlay">
     <div class="modal-content">
       <h3>{{ props.title }}</h3> 
-      <!-- Deletion Confirmation -->
-      <p v-if="props.action === 'Delete'">{{ props.message }}</p>
-      <!-- Rename Input -->
+      
+      <!-- List Name Input (Create List & Edit List) -->
       <input 
-        v-model="localItem.title"
-        v-if="props.action === 'Edit'"
+        v-model="formData.title"
+        v-if="['Create', 'Edit'].includes(props.action)"
         placeholder="List name..."
         autofocus
       />
-      <div v-if="props.action === 'Create' || props.action === 'Edit'" class="category-select">
+      
+      <!-- Item Text Input (Edit Item) -->
+      <input 
+        v-model="formData.title"
+        v-if="props.action === 'EditItem'"
+        placeholder="Edit item..."
+        maxlength="32"
+        autofocus
+      />
+      <span v-if="props.action === 'EditItem'" class="char-count">{{ formData.title.length }}/32</span>
+      
+      <!-- Category Select (Create & Edit List) -->
+      <div v-if="['Create', 'Edit'].includes(props.action)" class="category-select">
         <label>Category:</label>
-        <select v-model.number="props.selectedCategoryId">
+        <select v-model.number="formData.categoryId">
           <option v-for="cat in categories" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </option>
         </select>
       </div>
+      
+      <!-- Confirmation Message (Delete & Clone item, Delete list) -->
+      <p v-if="['Delete', 'CloneItem', 'DeleteItem'].includes(props.action)">{{ props.message }}</p>
+      
+      <!-- Item Preview (Clone & Delete item) -->
+      <p v-if="['CloneItem', 'DeleteItem'].includes(props.action)" class="item-preview">
+        {{ formData.title }}
+      </p>
+      
       <div class="modal-actions">
+        <!-- List Actions -->
         <button v-if="props.action === 'Create'" @click="onCreate" class="btn-save">Create</button>
         <button v-if="props.action === 'Edit'" @click="onSave" class="btn-save">Save</button>
         <button v-if="props.action === 'Delete'" @click="onDelete" class="btn-delete">Delete</button>
+        
+        <!-- Item Actions -->
+        <button v-if="props.action === 'EditItem'" @click="onSaveItem" class="btn-save">Save</button>
+        <button v-if="props.action === 'CloneItem'" @click="onClone" class="btn-save">Clone</button>
+        <button v-if="props.action === 'DeleteItem'" @click="onDeleteItem" class="btn-delete">Delete</button>
+        
         <button @click="onCancel" class="btn-cancel">Cancel</button>
       </div>
     </div>
@@ -35,7 +62,7 @@ import { listStore } from '../stores/listStore';
 
 const props = defineProps({
   modelValue: Boolean,
-  action: '',
+  action: String,
   title: {
     type: String,
     default: 'Default Title',
@@ -44,42 +71,94 @@ const props = defineProps({
     type: String,
     default: '',
   },
-  selectedCategoryId: Number,
-  categories: {
-    type: Array,
-    default: () => [],
+  item: {
+    type: Object,
+    default: null,
+  },
+  selectedCategoryId: {
+    type: Number,
+    default: 1,
   },
 });
 
-const localItem = ref({})
-const categories = computed(() => listStore.categories)
+const categories = computed(() => listStore.categories);
 
+// Form data that resets for each action
+const formData = ref({
+  title: '',
+  categoryId: 1,
+});
 
-// sync when modal opens or item changes
+// Initialize form data when modal opens or item changes
 watch(
-  () => props.item,
-  (newItem) => {
-    localItem.value = newItem ? { ...newItem } : {}
+  () => [props.modelValue, props.item, props.action],
+  ([isOpen, item, action]) => {
+    if (isOpen) {
+      if (action === 'Create') {
+        formData.value = {
+          title: '',
+          categoryId: props.selectedCategoryId || 1,
+        };
+      } else if (action === 'Edit' && item) {
+        formData.value = {
+          title: item.name || '',
+          categoryId: item.categoryId || props.selectedCategoryId || 1,
+        };
+      } else if (['EditItem', 'CloneItem', 'DeleteItem'].includes(action) && item) {
+        formData.value = {
+          title: item.text || item.name || '',
+        };
+      }
+    }
   },
   { immediate: true }
-)
-const emit = defineEmits(["update:modelValue", "confirm", "cancel", "delete"])
+);
+
+const emit = defineEmits(['update:modelValue', 'confirm', 'cancel', 'delete', 'clone']);
 
 const onCreate = () => {
-  emit('confirm', newListName.value);
-  emit('update:modelValue', false);
-  return newListName.value = '';
+  if (formData.value.title.trim()) {
+    emit('confirm', {
+      title: formData.value.title,
+      categoryId: formData.value.categoryId,
+    });
+    emit('update:modelValue', false);
+  }
 };
 
 const onSave = () => {
-  emit('confirm', localItem.value);
-  emit('update:modelValue', false);
+  if (formData.value.title.trim()) {
+    emit('confirm', {
+      title: formData.value.title,
+      categoryId: formData.value.categoryId,
+    });
+    emit('update:modelValue', false);
+  }
+};
+
+const onSaveItem = () => {
+  if (formData.value.title.trim()) {
+    emit('confirm', {
+      title: formData.value.title,
+    });
+    emit('update:modelValue', false);
+  }
 };
 
 const onDelete = () => {
-  emit('delete', null);
+  emit('delete');
   emit('update:modelValue', false);
-}
+};
+
+const onDeleteItem = () => {
+  emit('delete');
+  emit('update:modelValue', false);
+};
+
+const onClone = () => {
+  emit('clone');
+  emit('update:modelValue', false);
+};
 
 const onCancel = () => {
   emit('cancel');
@@ -201,6 +280,22 @@ const onCancel = () => {
   border-radius: 4px;
   color: #e0e0e0;
   font-size: 0.95rem;
+}
+
+.item-preview {
+  background: #1a1a1a;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border-left: 3px solid #5a5aff;
+  font-style: italic;
+  color: #aaa;
+}
+
+.char-count {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 </style>

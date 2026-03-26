@@ -2,8 +2,7 @@
   <main class="main-content">
     <div class="content-wrapper">
       <div class="list-content">
-        <SettingsPage v-if="currentPage === 'settings'" />
-        <div v-else-if="currentList">
+        <div v-if="currentList">
           <div class="list-header">
             <h1>{{ currentList.name }}</h1>
           </div>
@@ -22,13 +21,7 @@
                 @touchend="onTouchEnd(index, $event)"
                 :class="{ swiped: itemSwipe[index] !== undefined && itemSwipe[index] < -50 }"
               >
-                <div v-if="editingIndex === index" class="edit-item">
-                  <input v-model="editedItem" placeholder="Edit item" maxlength="32" />
-                  <span class="char-count">{{ editedItem.length }}/32</span>
-                  <button class="btn-save" @click="saveItem(index)">Save</button>
-                  <button class="btn-cancel" @click="cancelEditItem">Cancel</button>
-                </div>
-                <div v-else class="item-display">
+                <div class="item-display">
                   <div class="item-content">
                     <span 
                       class="item-text"
@@ -57,10 +50,10 @@
                       v-if="activeMenuIndex === index" 
                       class="kebab-menu-dropdown"
                     >
-                      <button class="menu-item" @click="openEditModal(index)">✏️ Edit</button>
-                      <button class="menu-item" @click="openCloneModal(index)">📋 Clone</button>
+                      <button class="menu-item" @click="startEditItem(index)">✏️ Edit</button>
+                      <button class="menu-item" @click="startCloneItem(index)">📋 Clone</button>
                       <button class="menu-item" @click="togglePin(index)">{{ isItemPinned(index) ? '📌 Unpin' : '📌 Pin' }}</button>
-                      <button class="menu-item delete" @click="openDeleteModal(index)">🗑️ Delete</button>
+                      <button class="menu-item delete" @click="startDeleteItem(index)">🗑️ Delete</button>
                     </div>
                   </div>
                 </div>
@@ -92,75 +85,41 @@
             <button @click="addItem" :disabled="currentList.items.length >= 12">Add</button>
           </div>
 
-      <!-- Edit Modal -->
-      <div v-if="editModalOpen" class="modal-overlay" @click="closeEditModal">
-        <div class="modal-content" @click.stop>
-          <h2>Edit Item</h2>
-          <input 
-            v-model="editModalText" 
-            placeholder="Edit item" 
-            maxlength="32"
-            @keyup.enter="saveEditModal"
-          />
-          <span class="char-count">{{ editModalText.length }}/32</span>
-          <div class="modal-actions">
-            <button class="btn-save" @click="saveEditModal">Save</button>
-            <button class="btn-cancel" @click="closeEditModal">Cancel</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Clone Modal -->
-      <div v-if="cloneModalOpen" class="modal-overlay" @click="closeCloneModal">
-        <div class="modal-content" @click.stop>
-          <h2>Clone Item</h2>
-          <p>Create a duplicate of this item?</p>
-          <p class="item-preview">{{ cloneItemText }}</p>
-          <div class="modal-actions">
-            <button class="btn-save" @click="saveCloneModal">Clone</button>
-            <button class="btn-cancel" @click="closeCloneModal">Cancel</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Delete Modal -->
-      <div v-if="deleteModalOpen" class="modal-overlay" @click="closeDeleteModal">
-        <div class="modal-content" @click.stop>
-          <h2>Delete Item</h2>
-          <p>Are you sure you want to delete this item?</p>
-          <p class="item-preview">{{ deleteItemText }}</p>
-          <div class="modal-actions">
-            <button class="btn-delete" @click="saveDeleteModal">Delete</button>
-            <button class="btn-cancel" @click="closeDeleteModal">Cancel</button>
-          </div>
-        </div>
-      </div>
+      <!-- Item Action Modal -->
+      <Modal
+        v-model="modalOpen"
+        :action="modalAction"
+        :title="modalTitle"
+        :message="modalMessage"
+        :item="modalItem"
+        @confirm="handleModalConfirm"
+        @delete="handleModalDelete"
+        @clone="handleModalClone"
+        @cancel="closeModal"
+      />
     </main>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { listStore } from '../stores/listStore';
-import SettingsPage from './SettingsPage.vue';
+import Modal from './Modal.vue';
 
 const newItem = ref('');
 const showEditName = ref(false);
 const editedName = ref('');
-const editingIndex = ref(null);
-const editedItem = ref('');
 const itemLimitMessage = ref('');
 
-// Kebab menu and modal states
+// Kebab menu state
 const activeMenuIndex = ref(null);
-const editModalOpen = ref(false);
-const editModalIndex = ref(null);
-const editModalText = ref('');
-const cloneModalOpen = ref(false);
-const cloneItemIndex = ref(null);
-const cloneItemText = ref('');
-const deleteModalOpen = ref(false);
-const deleteItemIndex = ref(null);
-const deleteItemText = ref('');
+
+// Unified Modal State
+const modalOpen = ref(false);
+const modalAction = ref('');
+const modalTitle = ref('');
+const modalMessage = ref('');
+const modalItem = ref(null);
+const modalItemIndex = ref(null);
 
 // Swipe and long-press handling
 const itemSwipe = ref({});
@@ -169,7 +128,6 @@ const longPressTimer = ref(null);
 const longPressDuration = 500; // 500ms for long press
 
 const currentList = computed(() => listStore.getCurrentList());
-const currentPage = computed(() => listStore.currentPage);
 
 // Long-press handlers
 const startLongPress = (index) => {
@@ -240,24 +198,6 @@ const toggleCompleted = (index) => {
   listStore.toggleItemCompleted(listStore.currentListId, index);
 };
 
-const startEditItem = (index) => {
-  editingIndex.value = index;
-  editedItem.value = currentList.value.items[index].text;
-};
-
-const saveItem = (index) => {
-  if (editedItem.value.trim()) {
-    listStore.updateItem(listStore.currentListId, index, editedItem.value);
-    editingIndex.value = null;
-    editedItem.value = '';
-  }
-};
-
-const cancelEditItem = () => {
-  editingIndex.value = null;
-  editedItem.value = '';
-};
-
 const saveName = () => {
   if (editedName.value.trim()) {
     listStore.updateList(listStore.currentListId, editedName.value);
@@ -291,72 +231,64 @@ const closeMenu = () => {
   activeMenuIndex.value = null;
 };
 
-// Edit modal handlers
-const openEditModal = (index) => {
-  editModalIndex.value = index;
-  editModalText.value = currentList.value.items[index].text;
-  editModalOpen.value = true;
+// Unified Modal handlers
+const openModal = (action, title, item, index, message = '') => {
+  modalAction.value = action;
+  modalTitle.value = title;
+  modalItem.value = item;
+  modalItemIndex.value = index;
+  modalMessage.value = message;
+  modalOpen.value = true;
   closeMenu();
 };
 
-const closeEditModal = () => {
-  editModalOpen.value = false;
-  editModalIndex.value = null;
-  editModalText.value = '';
+const closeModal = () => {
+  modalOpen.value = false;
+  modalAction.value = '';
+  modalTitle.value = '';
+  modalMessage.value = '';
+  modalItem.value = null;
+  modalItemIndex.value = null;
 };
 
-const saveEditModal = () => {
-  if (editModalText.value.trim() && editModalIndex.value !== null) {
-    listStore.updateItem(listStore.currentListId, editModalIndex.value, editModalText.value);
-    closeEditModal();
+const handleModalConfirm = (formData) => {
+  if (modalAction.value === 'EditItem' && modalItemIndex.value !== null && formData.title.trim()) {
+    listStore.updateItem(listStore.currentListId, modalItemIndex.value, formData.title);
   }
+  closeModal();
 };
 
-// Clone modal handlers
-const openCloneModal = (index) => {
-  cloneItemIndex.value = index;
-  cloneItemText.value = currentList.value.items[index].text;
-  cloneModalOpen.value = true;
-  closeMenu();
-};
-
-const closeCloneModal = () => {
-  cloneModalOpen.value = false;
-  cloneItemIndex.value = null;
-  cloneItemText.value = '';
-};
-
-const saveCloneModal = () => {
-  if (cloneItemIndex.value !== null) {
-    const list = currentList.value;
-    if (list.items.length < 12) {
-      listStore.addItem(listStore.currentListId, cloneItemText.value);
-      closeCloneModal();
-    } else {
-      itemLimitMessage.value = 'Maximum 12 items allowed per list';
-    }
+const handleModalDelete = () => {
+  if (modalItemIndex.value !== null) {
+    removeItem(modalItemIndex.value);
   }
+  closeModal();
 };
 
-// Delete modal handlers
-const openDeleteModal = (index) => {
-  deleteItemIndex.value = index;
-  deleteItemText.value = currentList.value.items[index].text;
-  deleteModalOpen.value = true;
-  closeMenu();
-};
-
-const closeDeleteModal = () => {
-  deleteModalOpen.value = false;
-  deleteItemIndex.value = null;
-  deleteItemText.value = '';
-};
-
-const saveDeleteModal = () => {
-  if (deleteItemIndex.value !== null) {
-    removeItem(deleteItemIndex.value);
-    closeDeleteModal();
+const handleModalClone = () => {
+  if (modalItemIndex.value !== null && currentList.value && currentList.value.items.length < 12) {
+    const cloneText = currentList.value.items[modalItemIndex.value].text;
+    listStore.addItem(listStore.currentListId, cloneText);
+  } else if (currentList.value && currentList.value.items.length >= 12) {
+    itemLimitMessage.value = 'Maximum 12 items allowed per list';
   }
+  closeModal();
+};
+
+// Modal action shortcuts
+const startEditItem = (index) => {
+  const item = currentList.value.items[index];
+  openModal('EditItem', 'Edit Item', item, index);
+};
+
+const startDeleteItem = (index) => {
+  const item = currentList.value.items[index];
+  openModal('DeleteItem', 'Delete Item', item, index, 'Are you sure you want to delete this item?');
+};
+
+const startCloneItem = (index) => {
+  const item = currentList.value.items[index];
+  openModal('CloneItem', 'Clone Item', item, index, 'Create a duplicate of this item?');
 };
 </script>
 
@@ -619,39 +551,6 @@ const saveDeleteModal = () => {
   color: #888;
 }
 
-.edit-item {
-  display: flex;
-  width: 100%;
-  gap: 0.5rem;
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-
-.edit-item input {
-  flex: 1;
-  min-width: 200px;
-  padding: 0.5rem;
-  background: #1a1a1a;
-  border: 1px solid #5a5aff;
-  border-radius: 3px;
-  color: #e0e0e0;
-  font-size: 0.95rem;
-  position: relative;
-}
-
-.edit-item input:focus {
-  outline: none;
-  border-color: #7575ff;
-}
-
-.edit-item .char-count {
-  position: static;
-  transform: none;
-  font-size: 0.75rem;
-  color: #888;
-  white-space: nowrap;
-}
-
 .btn-save,
 .btn-cancel {
   padding: 0.5rem 0.75rem;
@@ -759,112 +658,6 @@ const saveDeleteModal = () => {
 .menu-item.delete:hover {
   background: rgba(255, 68, 68, 0.2);
   color: #ff4444;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.modal-content {
-  background: #2a2a2a;
-  border: 1px solid #404040;
-  border-radius: 8px;
-  padding: 2rem;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-.modal-content h2 {
-  margin: 0 0 1rem 0;
-  color: #fff;
-  font-size: 1.5rem;
-}
-
-.modal-content p {
-  margin: 0.75rem 0;
-  color: #e0e0e0;
-}
-
-.modal-content input {
-  width: 100%;
-  padding: 0.75rem;
-  background: #1a1a1a;
-  border: 1px solid #404040;
-  border-radius: 4px;
-  color: #e0e0e0;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  margin: 0.75rem 0;
-}
-
-.modal-content input:focus {
-  outline: none;
-  border-color: #5a5aff;
-}
-
-.item-preview {
-  background: #1a1a1a;
-  padding: 0.75rem;
-  border-radius: 4px;
-  border-left: 3px solid #5a5aff;
-  font-style: italic;
-  color: #aaa;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-  justify-content: flex-end;
-}
-
-.modal-actions .btn-save,
-.modal-actions .btn-cancel,
-.modal-actions .btn-delete {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.9rem;
-  transition: all 0.3s;
-}
-
-.modal-actions .btn-save {
-  background: #4CAF50;
-  color: white;
-}
-
-.modal-actions .btn-save:hover {
-  background: #66BB6A;
-}
-
-.modal-actions .btn-delete {
-  background: #ff4444;
-  color: white;
-}
-
-.modal-actions .btn-delete:hover {
-  background: #ff6666;
-}
-
-.modal-actions .btn-cancel {
-  background: #666;
-  color: white;
-}
-
-.modal-actions .btn-cancel:hover {
-  background: #777;
 }
 
 .empty-state {
