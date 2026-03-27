@@ -102,7 +102,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { listStore } from '../stores/listStore';
+import { listStore } from '../stores/firebaseStore';
 import Modal from './Modal.vue';
 
 const newItem = ref('');

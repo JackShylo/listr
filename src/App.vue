@@ -1,12 +1,16 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import Navbar from './components/Navbar.vue';
 import ListManager from './components/ListManager.vue';
 import Pinboard from './components/Pinboard.vue';
 import SettingsPage from './components/SettingsPage.vue';
-import { listStore } from './stores/listStore';
+import { listStore } from './stores/firebaseStore';
 
 const currentPage = computed(() => listStore.currentPage);
+
+onMounted(() => {
+  listStore.init();
+});
 </script>
 
 <template>

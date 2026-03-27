@@ -38,7 +38,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { listStore } from '../stores/listStore';
+import { listStore } from '../stores/firebaseStore';
 
 const pinnedItems = computed(() => listStore.getPinnedItems());
 

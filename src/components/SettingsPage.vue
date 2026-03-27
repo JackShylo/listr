@@ -63,6 +63,22 @@
         </div>
       </div>
 
+      <div class="settings-section">
+        <h2>Database</h2>
+        
+        <button class="btn-seed" @click="handleSeedData" :disabled="seedLoading">
+          {{ seedLoading ? '⏳ Seeding...' : '🌱 Seed Sample Data' }}
+        </button>
+        <p class="setting-help">Populate database with sample lists and items for testing</p>
+        
+        <button class="btn-clear" @click="handleClearData" :disabled="seedLoading">
+          {{ seedLoading ? '⏳ Clearing...' : '🗑️ Clear All Data' }}
+        </button>
+        <p class="setting-help">Delete all lists and items from the database</p>
+        
+        <div v-if="seedMessage" :class="['seed-message', seedMessageType]">{{ seedMessage }}</div>
+      </div>
+
       <div class="settings-section danger-zone">
         <h2>Danger Zone</h2>
         
@@ -82,10 +98,14 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { listStore } from '../stores/listStore';
+import { listStore } from '../stores/firebaseStore';
+import { seedDatabase, clearDatabase } from '../utils/seedData';
 
 const localSettings = ref({ ...listStore.settings });
 const categories = computed(() => listStore.categories);
+const seedLoading = ref(false);
+const seedMessage = ref('');
+const seedMessageType = ref('success');
 
 const getListsByCategory = (categoryId) => {
   return listStore.getListsByCategory(categoryId);
@@ -111,6 +131,51 @@ const updateCategoryColor = (categoryId, color) => {
   const category = categories.value.find(c => c.id === categoryId);
   if (category) {
     listStore.updateCategory(categoryId, category.name, color);
+  }
+};
+
+const handleSeedData = async () => {
+  seedLoading.value = true;
+  seedMessage.value = '';
+  try {
+    const success = await seedDatabase();
+    if (success) {
+      seedMessageType.value = 'success';
+      seedMessage.value = '✅ Database seeded successfully!';
+    } else {
+      seedMessageType.value = 'error';
+      seedMessage.value = '❌ Error seeding database';
+    }
+  } catch (error) {
+    seedMessageType.value = 'error';
+    seedMessage.value = '❌ Error: ' + error.message;
+  } finally {
+    seedLoading.value = false;
+    setTimeout(() => seedMessage.value = '', 3000);
+  }
+};
+
+const handleClearData = async () => {
+  if (!confirm('Are you sure you want to delete ALL lists and items? This cannot be undone.')) {
+    return;
+  }
+  seedLoading.value = true;
+  seedMessage.value = '';
+  try {
+    const success = await clearDatabase();
+    if (success) {
+      seedMessageType.value = 'success';
+      seedMessage.value = '✅ Database cleared successfully!';
+    } else {
+      seedMessageType.value = 'error';
+      seedMessage.value = '❌ Error clearing database';
+    }
+  } catch (error) {
+    seedMessageType.value = 'error';
+    seedMessage.value = '❌ Error: ' + error.message;
+  } finally {
+    seedLoading.value = false;
+    setTimeout(() => seedMessage.value = '', 3000);
   }
 };
 </script>
@@ -346,6 +411,79 @@ const updateCategoryColor = (categoryId, color) => {
 
 .btn-cancel:hover {
   background: #505050;
+}
+
+.btn-seed,
+.btn-clear {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  margin-bottom: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-seed {
+  background: #4ecdc4;
+  color: #1a1a1a;
+}
+
+.btn-seed:hover:not(:disabled) {
+  background: #45b8b0;
+}
+
+.btn-seed:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-clear {
+  background: rgba(255, 150, 150, 0.2);
+  color: #ff6b6b;
+  border: 2px solid #ff6b6b;
+}
+
+.btn-clear:hover:not(:disabled) {
+  background: rgba(255, 150, 150, 0.3);
+}
+
+.btn-clear:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.seed-message {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease-in-out;
+}
+
+.seed-message.success {
+  background: rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+  border: 1px solid #4ecdc4;
+}
+
+.seed-message.error {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Scrollbar styling */

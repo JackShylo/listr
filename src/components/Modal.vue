@@ -71,7 +71,7 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue';
-import { listStore } from '../stores/listStore';
+import { listStore } from '../stores/firebaseStore';
 
 const props = defineProps({
   modelValue: Boolean,
