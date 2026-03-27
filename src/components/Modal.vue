@@ -11,6 +11,16 @@
         autofocus
       />
       
+      <!-- Category Name Input (Create Category) -->
+      <input 
+        v-model="formData.title"
+        v-if="props.action === 'CreateCategory'"
+        placeholder="Category name..."
+        maxlength="20"
+        autofocus
+      />
+      <span v-if="props.action === 'CreateCategory'" class="char-count">{{ formData.title.length }}/20</span>
+      
       <!-- Item Text Input (Edit Item) -->
       <input 
         v-model="formData.title"
@@ -44,6 +54,9 @@
         <button v-if="props.action === 'Create'" @click="onCreate" class="btn-save">Create</button>
         <button v-if="props.action === 'Edit'" @click="onSave" class="btn-save">Save</button>
         <button v-if="props.action === 'Delete'" @click="onDelete" class="btn-delete">Delete</button>
+        
+        <!-- Category Actions -->
+        <button v-if="props.action === 'CreateCategory'" @click="onCreateCategory" class="btn-save">Add Category</button>
         
         <!-- Item Actions -->
         <button v-if="props.action === 'EditItem'" @click="onSaveItem" class="btn-save">Save</button>
@@ -104,6 +117,10 @@ watch(
           title: item.name || '',
           categoryId: item.categoryId || props.selectedCategoryId || 1,
         };
+      } else if (action === 'CreateCategory') {
+        formData.value = {
+          title: '',
+        };
       } else if (['EditItem', 'CloneItem', 'DeleteItem'].includes(action) && item) {
         formData.value = {
           title: item.text || item.name || '',
@@ -158,6 +175,15 @@ const onDeleteItem = () => {
 const onClone = () => {
   emit('clone');
   emit('update:modelValue', false);
+};
+
+const onCreateCategory = () => {
+  if (formData.value.title.trim()) {
+    emit('confirm', {
+      title: formData.value.title,
+    });
+    emit('update:modelValue', false);
+  }
 };
 
 const onCancel = () => {

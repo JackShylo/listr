@@ -19,7 +19,7 @@
                 @touchstart="onTouchStart(index, $event)"
                 @touchmove="onTouchMove(index, $event)"
                 @touchend="onTouchEnd(index, $event)"
-                :class="{ swiped: itemSwipe[index] !== undefined && itemSwipe[index] < -50 }"
+                @click="toggleCompleted(index)"
               >
                 <div class="item-display">
                   <div class="item-content">

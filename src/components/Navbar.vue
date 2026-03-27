@@ -17,10 +17,10 @@
           >
             {{ category.name }}
           </span>
-          <span class="category-count">({{ getListsByCategory(category.id).length }})</span>
+          <!--<span class="category-count">({{ getListsByCategory(category.id).length }})</span>-->
           <span class="category-add">
-            <button class="btn-create" @click="showCreateModal = true" title="Create new list" :disabled="lists.length >= 8">
-              +
+            <button class="btn-create" @click.stop="showCreateModal = true" title="Create new list" :disabled="lists.length >= 8">
+            +
             </button>
           </span>
         </div>
@@ -40,12 +40,12 @@
             <div class="list-item-wrapper">
               <button class="list-link" @click="selectList(list.id)">
                 <span 
-                  class="category-name"
+                  class="list-name"
                   :style="{ borderLeftColor: category.color }"
                 >
                   {{ list.name }}
                 </span>
-                <span class="item-count">({{ list.items.length }})</span>
+                <!--<span class="item-count">({{ list.items.length }})</span>-->
               </button>
               
               <div class="kebab-menu-container">
@@ -57,7 +57,7 @@
                 ⋮
                 </button>
                 
-                <div v-if="openMenuId === list.id" class="kebab-dropdown" @click.stop>
+                <div v-if="openMenuId === list.id" class="kebab-dropdown">
                   <button 
                     class="menu-option rename-option"
                     @click="startEdit(list)"
@@ -79,6 +79,9 @@
     </ul>
 
     <div class="sidebar-footer">
+      <button v-if="categories.length <= 8" class="btn-add-category" @click="showAddCategoryModal = true" title="Add new category">
+        New Category +
+      </button>
       <div class="footer-info">
         <p v-if="lists.length >= 8" class="limit-warning">✓ Max lists reached</p>
         <p class="list-count">{{ lists.length }}/8 lists</p>
@@ -120,6 +123,16 @@
       @cancel="handleCancel"
     />
   </transition>
+
+  <transition name="fade">
+    <Modal
+      v-model="showAddCategoryModal"
+      :action="'CreateCategory'"
+      :title="'Add New Category'"
+      @confirm="handleCreateCategory"
+      @cancel="handleCancelCategory"
+    />
+  </transition>
 </template>
 
 <script setup>
@@ -143,6 +156,10 @@ const listToEdit = ref(null);
 // Delete Confirmation State
 const showDeleteModal = ref(false);
 const listToDelete = ref(null);
+
+// Add Category Modal State
+const showAddCategoryModal = ref(false);
+const newCategoryName = ref('');
 
 // Drag-and-Drop State
 const draggedListId = ref(null);
@@ -214,6 +231,20 @@ const confirmDelete = () => {
   }
 };
 
+const handleCreateCategory = (formData) => {
+  if (formData.title?.trim()) {
+    listStore.createCategory(formData.title);
+    newCategoryName.value = '';
+    showAddCategoryModal.value = false;
+  }
+};
+
+const handleCancelCategory = () => {
+  newCategoryName.value = '';
+  showAddCategoryModal.value = false;
+};
+
+// UI Interaction Methods
 const toggleCategory = (categoryId) => {
   const index = expandedCategories.value.indexOf(categoryId);
   if (index > -1) {
@@ -313,24 +344,22 @@ const handleDrop = (targetList, targetCategoryId) => {
 }
 
 .btn-create {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    background: #5a5aff;
+    width: 24px;
+    height: 24px;
     color: white;
+    background: 00;
     border: none;
     border-radius: 6px;
     font-size: 1.2rem;
-    font-weight: bold;
     cursor: pointer;
     transition: all 0.3s;
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center; 
 }
 
 .btn-create:hover {
-    background: #7575ff;
+    background: #ffffff20;
 }
 
 .btn-create:disabled {
@@ -487,6 +516,15 @@ button {
 .category-name {
     flex: 1;
     font-weight: 600;
+    font-size: 1rem;
+    color: #fff;
+    border-left: 3px solid #5a5aff;
+    padding-left: 0.5rem;
+}
+
+.list-name {
+    flex: 1;
+    font-weight: 400;
     font-size: 0.9rem;
     color: #fff;
     border-left: 3px solid #5a5aff;
@@ -506,6 +544,7 @@ button {
 }
 
 .list-item {
+    background: #202020;
     border-bottom: 1px solid #333;
     transition: all 0.2s ease;
 }
@@ -570,7 +609,7 @@ button {
     background: none;
     border: none;
     color: #999;
-    font-size: 1.2rem;
+    font-size: 1rem;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -860,6 +899,23 @@ button {
     width: 100%;
 }
 
+.btn-add-category {
+    width: 100%;
+    padding: 0.75rem;
+    background: #5a5aff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-add-category:hover {
+    background: #7575ff;
+}
+
 .list-count {
     margin: 0;
     font-size: 0.85rem;
@@ -891,173 +947,5 @@ button {
 
 .lists-menu::-webkit-scrollbar-thumb:hover {
     background: #505050;
-}
-
-.navbar-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 98;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    display: none;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.modal-content {
-  background: #2a2a2a;
-  border: 1px solid #404040;
-  border-radius: 8px;
-  padding: 2rem;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-.modal-content h2 {
-  margin: 0 0 1rem 0;
-  color: #fff;
-  font-size: 1.5rem;
-}
-
-.modal-content p {
-  margin: 0.75rem 0;
-  color: #e0e0e0;
-}
-
-.modal-content input {
-  width: 100%;
-  padding: 0.75rem;
-  background: #1a1a1a;
-  border: 1px solid #404040;
-  border-radius: 4px;
-  color: #e0e0e0;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  margin: 0.75rem 0;
-}
-
-.modal-content input:focus {
-  outline: none;
-  border-color: #5a5aff;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-  justify-content: flex-end;
-}
-
-.modal-actions .btn-save,
-.modal-actions .btn-cancel,
-.modal-actions .btn-delete {
-    margin: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.9rem;
-  transition: all 0.3s;
-}
-
-.modal-actions .btn-save {
-  background: #4CAF50;
-  color: white;
-}
-
-.modal-actions .btn-save:hover {
-  background: #66BB6A;
-}
-
-.modal-actions .btn-delete {
-  background: #ff4444;
-  color: white;
-}
-
-.modal-actions .btn-delete:hover {
-  background: #ff6666;
-}
-
-.modal-actions .btn-cancel {
-    margin: 0.5rem;
-  background: #666;
-  color: white;
-}
-
-.modal-actions .btn-cancel:hover {
-  background: #777;
-}
-
-
-@media (max-width: 768px) {
-    .navbar-backdrop {
-        display: block;
-    }
-
-    .navbar.sidebar:not(.collapsed) .navbar-backdrop {
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .navbar.sidebar.collapsed .navbar-backdrop {
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-    .navbar.sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 250px;
-        height: 100vh;
-        z-index: 99;
-        transform: translateX(0);
-    }
-
-    .navbar.sidebar.collapsed {
-        transform: translateX(-100%);
-    }
-
-    .sidebar-header h1 {
-        font-size: 1.25rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .navbar.sidebar {
-        width: 100%;
-    }
-
-    .sidebar-header {
-        padding: 1rem;
-    }
-
-    .sidebar-header h1 {
-        font-size: 1.1rem;
-    }
-
-    .btn-create {
-        width: 32px;
-        height: 32px;
-        font-size: 1rem;
-    }
 }
 </style>
